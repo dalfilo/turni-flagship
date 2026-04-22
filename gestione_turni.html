@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestione Turni — Garibaldi & Marghera</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.1/jspdf.plugin.autotable.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F5F4F0;--surface:#FFFFFF;--surface2:#F0EFE9;--border:#E2E0D8;
+  --text:#1A1917;--text2:#6B6760;--text3:#9E9B95;
+  --green:#1A6B3C;--green-bg:#E8F5EE;--green-mid:#2E9155;
+  --blue:#1A4A8A;--blue-bg:#E8EFF8;--blue-mid:#2563C4;
+  --red:#8A1A1A;--red-bg:#F8E8E8;
+  --amber:#7A5000;--amber-bg:#FFF3D6;
+  --gray2:#ECEAE4;--gray3:#D4D1C8;
+  --radius:8px;--radius-lg:12px;
+  --shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --shadow-lg:0 4px 16px rgba(0,0,0,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh}
+a{color:inherit}
+
+/* Layout */
+.shell{display:flex;flex-direction:column;min-height:100vh}
+.topnav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:50}
+.topnav-brand{font-size:15px;font-weight:600;letter-spacing:-.3px;display:flex;align-items:center;gap:10px}
+.brand-pill{background:var(--text);color:#fff;font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;letter-spacing:.5px}
+.topnav-actions{display:flex;align-items:center;gap:8px}
+.main{flex:1;padding:24px}
+.content{max-width:1200px;margin:0 auto}
+
+/* Buttons */
+button{font-family:'DM Sans',sans-serif;cursor:pointer;border:none;outline:none;transition:all .15s}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius);font-size:13px;font-weight:500;border:1px solid var(--border);background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+.btn:hover{background:var(--surface2);border-color:var(--gray3)}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--text);color:#fff;border-color:var(--text)}
+.btn-primary:hover{background:#333;border-color:#333}
+.btn-green{background:var(--green-bg);color:var(--green);border-color:#C3DDD0}
+.btn-green:hover{background:#d6ece1;border-color:#A8CCBA}
+.btn-blue{background:var(--blue-bg);color:var(--blue);border-color:#C3D5EE}
+.btn-blue:hover{background:#d1dfef;border-color:#A8C4E3}
+.btn-red{background:var(--red-bg);color:var(--red);border-color:#DFC3C3}
+.btn-red:hover{background:#f0d0d0}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-icon{padding:7px;border-radius:var(--radius)}
+svg-icon{display:inline-block;width:14px;height:14px;vertical-align:middle}
+
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow)}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:20px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px}
+.stat-label{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+.stat-val{font-size:28px;font-weight:300;color:var(--text);font-variant-numeric:tabular-nums;letter-spacing:-1px}
+.stat-sub{font-size:11px;color:var(--text3);margin-top:3px}
+.stat-val.good{color:var(--green)}
+.stat-val.warn{color:var(--amber)}
+.stat-val.bad{color:var(--red)}
+
+/* Controls */
+.controls{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px}
+.week-nav{display:flex;align-items:center;gap:8px}
+.week-btn{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);font-size:16px;color:var(--text2)}
+.week-btn:hover{background:var(--surface2)}
+.week-label{font-size:15px;font-weight:600;min-width:170px;text-align:center;letter-spacing:-.3px}
+.week-note{font-size:11px;font-weight:500;padding:3px 9px;border-radius:20px;background:var(--amber-bg);color:var(--amber)}
+.store-tabs{display:flex;gap:4px;background:var(--surface2);padding:3px;border-radius:var(--radius);border:1px solid var(--border)}
+.stab{padding:5px 14px;border-radius:6px;font-size:12px;font-weight:500;color:var(--text2);cursor:pointer;transition:all .15s;border:none;background:transparent}
+.stab.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+.stab.gari.active{color:var(--green)}
+.stab.margh.active{color:var(--blue)}
+
+/* Table */
+.table-wrap{overflow-x:auto;border-radius:var(--radius-lg);border:1px solid var(--border);background:var(--surface)}
+table{width:100%;border-collapse:collapse;font-size:12px;min-width:720px}
+thead th{padding:10px 8px;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid var(--border);background:var(--surface2);text-align:center;white-space:nowrap}
+thead th:first-child{text-align:left;padding-left:16px;min-width:130px}
+thead th:last-child{min-width:72px}
+tbody tr{border-bottom:1px solid var(--border)}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:#FAFAF8}
+td{padding:7px 6px;text-align:center;vertical-align:middle}
+td:first-child{text-align:left;padding-left:16px}
+td.tot-cell{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;text-align:center;background:var(--surface2)}
+.store-section td{background:var(--surface2);font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;padding:6px 16px;color:var(--text3)}
+.store-section.gari td{color:var(--green);background:var(--green-bg)}
+.store-section.margh td{color:var(--blue);background:var(--blue-bg)}
+.person-name{font-weight:500;font-size:13px;color:var(--text)}
+.person-role{font-size:10px;color:var(--text3);font-weight:400}
+
+/* Shift cells */
+.shift-cell{display:flex;flex-direction:column;align-items:center;gap:2px}
+.shift-pill{display:inline-flex;align-items:center;justify-content:center;padding:3px 7px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;transition:all .12s;white-space:nowrap;min-width:72px;font-family:'DM Mono',monospace}
+.shift-pill:hover{opacity:.8;transform:scale(1.04)}
+.pill-work{background:var(--green-bg);color:var(--green);border:1px solid #C3DDD0}
+.pill-riposo{background:var(--red-bg);color:var(--red);border:1px solid #DFC3C3}
+.pill-chiuso{background:var(--gray2);color:var(--text3);border:1px solid var(--gray3)}
+.pill-support{background:var(--blue-bg);color:var(--blue);border:1px solid #C3D5EE;font-style:italic}
+.pill-empty{background:transparent;color:var(--text3);border:1px dashed var(--gray3)}
+.shift-h{font-size:9px;color:var(--text3);font-family:'DM Mono',monospace}
+
+/* Modal */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;align-items:center;justify-content:center;padding:16px}
+.overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border);box-shadow:var(--shadow-lg);width:340px;max-width:100%;overflow:hidden}
+.modal-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-head h3{font-size:14px;font-weight:600;letter-spacing:-.2px}
+.modal-close{width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text2);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer}
+.modal-close:hover{background:var(--surface2)}
+.modal-body{padding:16px 20px;display:flex;flex-direction:column;gap:12px}
+.form-group label{display:block;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.form-group select,.form-group input{width:100%;padding:8px 10px;border-radius:var(--radius);border:1px solid var(--border);font-family:'DM Sans',sans-serif;font-size:13px;background:var(--surface);color:var(--text);outline:none}
+.form-group select:focus,.form-group input:focus{border-color:var(--text);box-shadow:0 0 0 2px rgba(26,25,23,.08)}
+.modal-foot{padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+
+/* Legend */
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+.leg{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text3)}
+.leg-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+
+/* Export panel */
+.export-bar{display:flex;gap:8px;align-items:center}
+
+/* Progress badge */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500}
+.badge-ok{background:var(--green-bg);color:var(--green)}
+.badge-warn{background:var(--amber-bg);color:var(--amber)}
+
+/* Notes & Todos */
+.bottom-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px}
+@media(max-width:860px){.bottom-grid{grid-template-columns:1fr}}
+.section-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+.section-head{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surface2)}
+.section-head h2{font-size:13px;font-weight:600;letter-spacing:-.2px;display:flex;align-items:center;gap:7px}
+.section-icon{width:18px;height:18px;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font-size:11px}
+.icon-note{background:var(--amber-bg);color:var(--amber)}
+.icon-todo{background:var(--green-bg);color:var(--green)}
+.section-body{padding:14px 16px}
+
+/* Day notes */
+.day-tabs{display:flex;gap:4px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px}
+.day-tab{padding:4px 10px;border-radius:6px;font-size:11px;font-weight:500;color:var(--text3);cursor:pointer;border:1px solid transparent;white-space:nowrap;background:transparent;flex-shrink:0}
+.day-tab:hover{background:var(--surface2);color:var(--text2)}
+.day-tab.active{background:var(--amber-bg);color:var(--amber);border-color:#F0D080}
+.note-store-tabs{display:flex;gap:4px;margin-bottom:10px}
+.note-stab{padding:3px 10px;border-radius:6px;font-size:11px;font-weight:500;color:var(--text3);cursor:pointer;border:1px solid var(--border);background:transparent}
+.note-stab.active{background:var(--surface2);color:var(--text);border-color:var(--gray3)}
+.note-stab.gari.active{color:var(--green);background:var(--green-bg);border-color:#C3DDD0}
+.note-stab.margh.active{color:var(--blue);background:var(--blue-bg);border-color:#C3D5EE}
+.note-textarea{width:100%;min-height:90px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);background:var(--surface);resize:vertical;outline:none;line-height:1.6}
+.note-textarea:focus{border-color:var(--amber);box-shadow:0 0 0 2px rgba(122,80,0,.07)}
+.note-saved{font-size:11px;color:var(--green);opacity:0;transition:opacity .3s}
+.note-saved.show{opacity:1}
+
+/* Todos */
+.todo-add{display:flex;gap:8px;margin-bottom:12px}
+.todo-add input{flex:1;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);background:var(--surface);outline:none}
+.todo-add input:focus{border-color:var(--green);box-shadow:0 0 0 2px rgba(26,107,60,.07)}
+.todo-add select{padding:7px 8px;border:1px solid var(--border);border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text2);background:var(--surface);outline:none;cursor:pointer}
+.todo-list{display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto}
+.todo-item{display:flex;align-items:flex-start;gap:10px;padding:9px 11px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);transition:all .15s}
+.todo-item.done{background:var(--surface2);opacity:.6}
+.todo-item.done .todo-text{text-decoration:line-through;color:var(--text3)}
+.todo-check{width:16px;height:16px;border:1.5px solid var(--gray3);border-radius:4px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:1px;transition:all .15s}
+.todo-check.checked{background:var(--green);border-color:var(--green)}
+.todo-check.checked::after{content:'✓';font-size:10px;color:#fff;line-height:1}
+.todo-text{flex:1;font-size:13px;color:var(--text);line-height:1.4}
+.todo-meta{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.prio-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.prio-alta{background:#E24B4A}
+.prio-media{background:#EF9F27}
+.prio-bassa{background:#63992A}
+.prio-label{font-size:10px;color:var(--text3)}
+.todo-del{width:20px;height:20px;border-radius:4px;border:none;background:transparent;color:var(--text3);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1}
+.todo-del:hover{background:var(--red-bg);color:var(--red)}
+.todo-store-badge{font-size:10px;padding:1px 6px;border-radius:10px;font-weight:500}
+.badge-gari{background:var(--green-bg);color:var(--green)}
+.badge-margh{background:var(--blue-bg);color:var(--blue)}
+.todo-filters{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.todo-filter{padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text3)}
+.todo-filter.active{background:var(--surface2);color:var(--text);border-color:var(--gray3)}
+.todo-empty{font-size:12px;color:var(--text3);text-align:center;padding:20px 0;font-style:italic}
+
+/* Responsive */
+@media(max-width:700px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .topnav{padding:0 14px}
+  .main{padding:14px}
+  .export-bar{display:none}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<nav class="topnav">
+  <div class="topnav-brand">
+    <span class="brand-pill">TURNI</span>
+    Garibaldi &amp; Marghera
+  </div>
+  <div class="topnav-actions">
+    <div class="export-bar">
+      <button class="btn btn-green btn-sm" onclick="exportExcel()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Esporta Excel
+      </button>
+      <button class="btn btn-blue btn-sm" onclick="exportPDF()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+        Esporta PDF
+      </button>
+    </div>
+    <button class="btn btn-sm" onclick="openAddPerson()">+ Persona</button>
+  </div>
+</nav>
+
+<main class="main">
+<div class="content">
+
+  <div class="controls">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <div class="week-nav">
+        <button class="week-btn" onclick="prevWeek()">&#8592;</button>
+        <div class="week-label" id="wlabel"></div>
+        <button class="week-btn" onclick="nextWeek()">&#8594;</button>
+      </div>
+      <span class="week-note" id="wnote" style="display:none"></span>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <div class="store-tabs">
+        <button class="stab gari active" onclick="setStore('GARIBALDI',this)">Garibaldi</button>
+        <button class="stab margh" onclick="setStore('MARGHERA',this)">Marghera</button>
+        <button class="stab" onclick="setStore('ENTRAMBI',this)">Entrambi</button>
+      </div>
+      <div class="export-bar" style="display:none" id="mobile-export">
+        <button class="btn btn-green btn-sm" onclick="exportExcel()">Excel</button>
+        <button class="btn btn-blue btn-sm" onclick="exportPDF()">PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="table-wrap" id="table-wrap">
+    <table id="grid">
+      <thead id="thead"></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="legend">
+    <div class="leg"><div class="leg-dot" style="background:var(--green-bg);border:1px solid #C3DDD0"></div>Turno lavoro</div>
+    <div class="leg"><div class="leg-dot" style="background:var(--red-bg);border:1px solid #DFC3C3"></div>Riposo</div>
+    <div class="leg"><div class="leg-dot" style="background:var(--gray2);border:1px solid var(--gray3)"></div>Chiuso</div>
+    <div class="leg"><div class="leg-dot" style="background:var(--blue-bg);border:1px solid #C3D5EE"></div>Supporto</div>
+    <div class="leg"><div class="leg-dot" style="background:transparent;border:1px dashed var(--gray3)"></div>Da assegnare</div>
+    <div style="margin-left:auto;font-size:11px;color:var(--text3)">Clicca una cella per modificare il turno</div>
+  </div>
+
+  <!-- Notes & Todos -->
+  <div class="bottom-grid">
+
+    <!-- Daily Notes -->
+    <div class="section-card">
+      <div class="section-head">
+        <h2><span class="section-icon icon-note">📝</span> Note giornaliere</h2>
+        <span class="note-saved" id="note-saved">Salvato ✓</span>
+      </div>
+      <div class="section-body">
+        <div class="note-store-tabs">
+          <button class="note-stab gari active" onclick="setNoteStore('GARIBALDI',this)">Garibaldi</button>
+          <button class="note-stab margh" onclick="setNoteStore('MARGHERA',this)">Marghera</button>
+        </div>
+        <div class="day-tabs" id="note-day-tabs"></div>
+        <textarea class="note-textarea" id="note-text" placeholder="Scrivi una nota per questo giorno..." oninput="saveNote()"></textarea>
+        <div style="font-size:11px;color:var(--text3);margin-top:6px">Le note vengono salvate automaticamente nel browser.</div>
+      </div>
+    </div>
+
+    <!-- To-Do List -->
+    <div class="section-card">
+      <div class="section-head">
+        <h2><span class="section-icon icon-todo">✓</span> To-do negozio</h2>
+        <span id="todo-count" style="font-size:11px;color:var(--text3)"></span>
+      </div>
+      <div class="section-body">
+        <div class="todo-add">
+          <input type="text" id="todo-input" placeholder="Aggiungi un'attività..." onkeydown="if(event.key==='Enter')addTodo()">
+          <select id="todo-prio">
+            <option value="media">Media</option>
+            <option value="alta">Alta</option>
+            <option value="bassa">Bassa</option>
+          </select>
+          <select id="todo-store">
+            <option value="GARIBALDI">Garibaldi</option>
+            <option value="MARGHERA">Marghera</option>
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="addTodo()">+</button>
+        </div>
+        <div class="todo-filters">
+          <button class="todo-filter active" onclick="setTodoFilter('tutti',this)">Tutti</button>
+          <button class="todo-filter" onclick="setTodoFilter('GARIBALDI',this)">Garibaldi</button>
+          <button class="todo-filter" onclick="setTodoFilter('MARGHERA',this)">Marghera</button>
+          <button class="todo-filter" onclick="setTodoFilter('aperti',this)">Da fare</button>
+          <button class="todo-filter" onclick="setTodoFilter('alta',this)">🔴 Alta</button>
+        </div>
+        <div class="todo-list" id="todo-list"></div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+</main>
+</div>
+
+<!-- Edit Shift Modal -->
+<div class="overlay" id="modal-shift">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="modal-title">Modifica turno</h3>
+      <button class="modal-close" onclick="closeModal('modal-shift')">&#215;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Tipo</label>
+        <select id="m-type" onchange="onTypeChange()">
+          <option value="work">Turno lavoro</option>
+          <option value="riposo">Riposo</option>
+          <option value="chiuso">Chiuso (negozio chiuso)</option>
+          <option value="support">Supporto</option>
+          <option value="empty">Vuoto / da assegnare</option>
+        </select>
+      </div>
+      <div class="form-group" id="m-hours-group">
+        <label>Orario</label>
+        <input type="text" id="m-hours" placeholder="es. 10-13/14-19">
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">Usa / per separare più fasce orarie</div>
+      </div>
+      <div id="m-calc" style="font-size:12px;color:var(--text2);background:var(--surface2);padding:8px 10px;border-radius:var(--radius);display:none"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-red btn-sm" onclick="deleteShift()">Elimina</button>
+      <button class="btn btn-sm" onclick="closeModal('modal-shift')">Annulla</button>
+      <button class="btn btn-primary btn-sm" onclick="saveShift()">Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Person Modal -->
+<div class="overlay" id="modal-person">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Aggiungi persona</h3>
+      <button class="modal-close" onclick="closeModal('modal-person')">&#215;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Nome</label>
+        <input type="text" id="p-name" placeholder="Nome cognome">
+      </div>
+      <div class="form-group">
+        <label>Negozio</label>
+        <select id="p-store">
+          <option value="GARIBALDI">Garibaldi</option>
+          <option value="MARGHERA">Marghera</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Ruolo</label>
+        <select id="p-role">
+          <option value="resp">Responsabile</option>
+          <option value="support">Supporto</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-sm" onclick="closeModal('modal-person')">Annulla</button>
+      <button class="btn btn-primary btn-sm" onclick="addPerson()">Aggiungi</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const DAYS=['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];
+const DAYS_FULL=['Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato','Domenica'];
+const WEEKS=[
+  {label:'13–19 Apr 2026',dates:['13/4','14/4','15/4','16/4','17/4','18/4','19/4'],note:''},
+  {label:'20–26 Apr 2026',dates:['20/4','21/4','22/4','23/4','24/4','25/4','26/4'],note:'Festivo 25 Aprile'},
+  {label:'27 Apr – 3 Mag',dates:['27/4','28/4','29/4','30/4','1/5','2/5','3/5'],note:'Festivo 1° Maggio'},
+  {label:'4–10 Mag 2026',dates:['4/5','5/5','6/5','7/5','8/5','9/5','10/5'],note:'Festa della Mamma'},
+  {label:'11–17 Mag 2026',dates:['11/5','12/5','13/5','14/5','15/5','16/5','17/5'],note:''},
+  {label:'18–24 Mag 2026',dates:['18/5','19/5','20/5','21/5','22/5','23/5','24/5'],note:''},
+  {label:'25–31 Mag 2026',dates:['25/5','26/5','27/5','28/5','29/5','30/5','31/5'],note:''},
+];
+
+function parseHours(txt,type){
+  if(!txt||['riposo','chiuso','empty'].includes(type)) return 0;
+  let t=0;
+  txt.split('/').forEach(s=>{const p=s.trim().split('-');if(p.length===2){const a=parseFloat(p[0]),b=parseFloat(p[1]);if(!isNaN(a)&&!isNaN(b))t+=b-a;}});
+  return t;
+}
+
+function parseSlot(raw){
+  if(!raw) return {type:'empty',hours:''};
+  const idx=raw.indexOf(':');
+  return {type:raw.substring(0,idx),hours:raw.substring(idx+1)};
+}
+
+function makeSlot(type,hours){return type+':'+hours;}
+
+// Initial schedule data: schedule[store][person] = array of 7 weeks, each week = array of 7 day slots
+const initSched={
+  GARIBALDI:{
+    'Sabrina':{role:'resp',weeks:[
+      ['riposo:','work:10-13/14-19','work:9-13/14-19','work:10-13/14-19','work:10-13/14-19','work:10-13/14-18','riposo:'],
+      ['work:10-13/14-19','riposo:','riposo:','work:10-13/14-19','work:10-13/14-19','work:10-13/14-19','work:10-13/14-19'],
+      ['work:10-13/14-19','riposo:','work:10-13/14-19','riposo:','work:10-13/14-19','work:10-13/14-19','work:10-13/14-19'],
+      ['riposo:','riposo:','work:10-13/14-19','work:10-13/14-19','work:10-13/14-19','work:10-13/14-19','work:10-13/14-19'],
+      ['riposo:','work:9-13/14-19','work:10-13/14-19','riposo:','work:10-13/14-19','work:10-13/14-19','work:10-13/14-19'],
+      ['work:10-13/14-19','work:10-13/14-19','work:10-13/14-19','riposo:','work:10-13/14-19','work:10-13/14-19','riposo:'],
+      ['work:10-13/14-19','work:10-13/14-19','work:10-13/14-19','riposo:','work:10-13/14-19','work:10-13/14-19','riposo:'],
+    ]},
+    'Chiara':{role:'resp',weeks:[
+      ['work:10-13/14-19','riposo:','work:15-19','riposo:','work:14-19','work:11-13/14-19','work:10-13/14-19'],
+      [null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null],
+    ]},
+    'Davide':{role:'support',weeks:[
+      [null,null,null,null,null,null,null],
+      ['support:10-19','support:10-19',null,null,null,null,null],
+      ['support:10-13/14-19','support:10-13/14-19','support:10-13/14-19','support:10-13/14-19','support:10-13/14-19','support:10-13/14-19','support:10-13/14-19'],
+      ['support:10-13/14-19','support:10-13/14-19','support:10-13/14-19','support:10-13/14-19','support:10-13/14-19','support:10-13/14-19','support:10-13/14-19'],
+      [null,'support:10-13/14-19','support:10-13/14-19',null,null,null,null],
+      [null,'support:10-13/14-19','support:10-13/14-19',null,null,null,null],
+      [null,'support:10-13/14-19','support:10-13/14-19',null,null,null,null],
+    ]},
+    'Ele M.':{role:'support',weeks:[
+      [null,null,null,null,null,null,null],
+      ['support:10-19','support:10-19','support:10-19','support:10-19',null,null,null],
+      [null,null,null,null,null,null,null],[null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null],[null,null,null,null,null,null,null],[null,null,null,null,null,null,null],
+    ]},
+    'Giorgia G.':{role:'support',weeks:[
+      [null,null,null,null,null,null,null],
+      ['support:10-19','support:10-19','support:10-19','support:10-19',null,null,null],
+      [null,null,null,null,null,null,null],[null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null],[null,null,null,null,null,null,null],[null,null,null,null,null,null,null],
+    ]},
+    'Egle':{role:'support',weeks:[
+      [null,null,null,null,null,null,null],
+      [null,'support:10-19','support:10-19',null,null,null,null],
+      [null,null,null,null,null,null,null],[null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null],[null,null,null,null,null,null,null],[null,null,null,null,null,null,null],
+    ]},
+    'Fede':{role:'support',weeks:[
+      [null,null,null,null,null,null,null],
+      [null,null,'support:10-19','support:10-19','support:10-19',null,null],
+      [null,null,null,null,null,null,null],[null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null],[null,null,null,null,null,null,null],[null,null,null,null,null,null,null],
+    ]},
+    'Claudia':{role:'support',weeks:[
+      [null,null,null,null,null,null,null],
+      [null,'support:10-19','support:10-19','support:10-19',null,null,null],
+      [null,null,null,null,null,null,null],[null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null],[null,null,null,null,null,null,null],[null,null,null,null,null,null,null],
+    ]},
+  },
+  MARGHERA:{
+    'Chiara':{role:'resp',weeks:[
+      [null,null,null,null,null,null,null],
+      ['work:11-13/14-19','riposo:','work:11-13/14-19','work:11-13/15-19','work:11-13/15-19','chiuso:','riposo:'],
+      ['chiuso:','riposo:','work:11-13/14-19','work:11-13/14-19','work:11-13/14-19','work:11-13/14-19','work:15-19'],
+      ['chiuso:','riposo:','work:11-13/14-19','work:11-13/14-19','work:11-13/14-19','work:11-13/14-19','work:15-19'],
+      ['chiuso:','riposo:','work:11-13/14-19','work:11-13/14-19','work:11-13/14-19','work:11-13/14-19','work:15-19'],
+      ['chiuso:','riposo:','work:11-13/14-19','work:11-13/14-19','work:11-13/14-19','work:11-13/14-19','work:15-19'],
+      ['chiuso:','riposo:','work:11-13/14-19','work:11-13/14-19','work:11-13/14-19','work:11-13/14-19','work:15-19'],
+    ]},
+  }
+};
+
+let schedule=JSON.parse(JSON.stringify(initSched));
+let currentWeek=0,currentStore='GARIBALDI';
+let _es,_ep,_ew,_ed;
+
+function setStore(s,btn){
+  currentStore=s;
+  document.querySelectorAll('.stab').forEach(t=>t.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  render();
+}
+
+function prevWeek(){if(currentWeek>0){currentWeek--;render();}}
+function nextWeek(){if(currentWeek<6){currentWeek++;render();}}
+
+function getStores(){
+  if(currentStore==='ENTRAMBI') return ['GARIBALDI','MARGHERA'];
+  return [currentStore];
+}
+
+function calcPersonWeek(store,person,week){
+  const data=schedule[store]?.[person];
+  if(!data) return 0;
+  const row=data.weeks[week];
+  if(!row) return 0;
+  let tot=0;
+  row.forEach(s=>{const {type,hours}=parseSlot(s);tot+=parseHours(hours,type);});
+  return tot;
+}
+
+function render(){
+  const w=WEEKS[currentWeek];
+  document.getElementById('wlabel').textContent=w.label;
+  const noteEl=document.getElementById('wnote');
+  if(w.note){noteEl.textContent=w.note;noteEl.style.display='';}
+  else noteEl.style.display='none';
+
+  const stores=getStores();
+  let totalOre=0,totalPersone=0,slotVuoti=0,giorniLav=0;
+  stores.forEach(st=>{
+    Object.keys(schedule[st]||{}).forEach(p=>{
+      totalPersone++;
+      const row=schedule[st][p].weeks[currentWeek];
+      row.forEach(s=>{
+        const {type,hours}=parseSlot(s||'');
+        const h=parseHours(hours,type);
+        totalOre+=h;
+        if(type==='work'||type==='support') giorniLav++;
+        if(!s||type==='empty') slotVuoti++;
+      });
+    });
+  });
+
+  const oreColor=totalOre>=60?'good':totalOre>=30?'warn':'bad';
+  document.getElementById('stats').innerHTML=`
+    <div class="stat">
+      <div class="stat-label">Ore totali settimana</div>
+      <div class="stat-val ${oreColor}">${Math.round(totalOre)}<span style="font-size:16px;font-weight:400"> h</span></div>
+      <div class="stat-sub">${stores.length>1?'tutti i negozi':currentStore.toLowerCase()}</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Persone pianificate</div>
+      <div class="stat-val">${totalPersone}</div>
+      <div class="stat-sub">di cui ${stores.flatMap(st=>Object.values(schedule[st]||{})).filter(p=>p.role==='support').length} supporto</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Turni attivi</div>
+      <div class="stat-val good">${giorniLav}</div>
+      <div class="stat-sub">su ${totalPersone*7} slot totali</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Slot da assegnare</div>
+      <div class="stat-val ${slotVuoti>0?'warn':'good'}">${slotVuoti}</div>
+      <div class="stat-sub">${slotVuoti===0?'tutto pianificato':'da completare'}</div>
+    </div>
+  `;
+
+  const thead=document.getElementById('thead');
+  thead.innerHTML=`<tr><th>Persona</th>${DAYS.map((d,i)=>`<th>${d}<br><span style="font-size:9px;font-weight:400">${w.dates[i]}</span></th>`).join('')}<th>Tot ore</th></tr>`;
+
+  const tbody=document.getElementById('tbody');
+  let html='';
+  stores.forEach(st=>{
+    const cls=st==='GARIBALDI'?'gari':'margh';
+    html+=`<tr class="store-section ${cls}"><td colspan="9">${st==='GARIBALDI'?'Garibaldi':'Marghera'} — settimana ${w.label}</td></tr>`;
+    Object.entries(schedule[st]||{}).forEach(([person,pdata])=>{
+      const row=pdata.weeks[currentWeek];
+      let weekH=0;
+      const cells=DAYS.map((_,di)=>{
+        const raw=row[di]||null;
+        const {type,hours}=parseSlot(raw||'');
+        const h=parseHours(hours,type);
+        weekH+=h;
+        let cls2='pill-'+type;
+        if(type==='empty'||!raw) cls2='pill-empty';
+        let lbl=type==='riposo'?'Riposo':type==='chiuso'?'Chiuso':type==='empty'||!raw?'+':hours||type;
+        return `<td><div class="shift-cell">
+          <span class="shift-pill ${cls2}" data-store="${st}" data-person="${encodeURIComponent(person)}" data-week="${currentWeek}" data-day="${di}" data-raw="${encodeURIComponent(raw||'')}">${lbl}</span>
+          ${h>0?`<span class="shift-h">${h}h</span>`:''}
+        </div></td>`;
+      }).join('');
+      html+=`<tr><td><div class="person-name">${person}</div><div class="person-role">${pdata.role==='resp'?'Responsabile':'Supporto'}</div></td>${cells}<td class="tot-cell">${Math.round(weekH)}<span style="font-size:10px;font-weight:400;color:var(--text3)"> h</span></td></tr>`;
+    });
+  });
+  tbody.innerHTML=html;
+}
+
+// Modal shift
+function openModal(store,person,week,day,raw){
+  _es=store;_ep=person;_ew=week;_ed=day;
+  const {type,hours}=parseSlot(raw||'');
+  document.getElementById('modal-title').textContent=`${person} — ${DAYS_FULL[day]} ${WEEKS[week].dates[day]}`;
+  document.getElementById('m-type').value=type||'empty';
+  document.getElementById('m-hours').value=hours;
+  onTypeChange();
+  document.getElementById('modal-shift').classList.add('open');
+}
+function onTypeChange(){
+  const t=document.getElementById('m-type').value;
+  const needs=['work','support'].includes(t);
+  document.getElementById('m-hours-group').style.display=needs?'':'none';
+  updateCalc();
+}
+function updateCalc(){
+  const t=document.getElementById('m-type').value;
+  const h=document.getElementById('m-hours').value;
+  const ore=parseHours(h,t);
+  const calc=document.getElementById('m-calc');
+  if(ore>0){calc.textContent=`Ore calcolate: ${ore}h`;calc.style.display='';}
+  else calc.style.display='none';
+}
+document.getElementById('m-hours').addEventListener('input',updateCalc);
+function saveShift(){
+  const t=document.getElementById('m-type').value;
+  const h=document.getElementById('m-hours').value;
+  schedule[_es][_ep].weeks[_ew][_ed]=t===''||t==='empty'?null:makeSlot(t,h);
+  closeModal('modal-shift');render();
+}
+function deleteShift(){
+  schedule[_es][_ep].weeks[_ew][_ed]=null;
+  closeModal('modal-shift');render();
+}
+
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+
+// Event delegation: handle clicks on shift pills
+document.getElementById('tbody').addEventListener('click',function(e){
+  const pill=e.target.closest('.shift-pill');
+  if(!pill) return;
+  const st=pill.dataset.store;
+  const person=decodeURIComponent(pill.dataset.person);
+  const week=parseInt(pill.dataset.week);
+  const day=parseInt(pill.dataset.day);
+  const raw=decodeURIComponent(pill.dataset.raw);
+  openModal(st,person,week,day,raw);
+});
+
+// Add person
+function openAddPerson(){document.getElementById('modal-person').classList.add('open');}
+function addPerson(){
+  const name=document.getElementById('p-name').value.trim();
+  const store=document.getElementById('p-store').value;
+  const role=document.getElementById('p-role').value;
+  if(!name) return;
+  if(!schedule[store]) schedule[store]={};
+  schedule[store][name]={role,weeks:Array(7).fill(null).map(()=>Array(7).fill(null))};
+  closeModal('modal-person');
+  document.getElementById('p-name').value='';
+  // Switch view to the store where the person was added
+  currentStore=store;
+  document.querySelectorAll('.stab').forEach(t=>t.classList.remove('active'));
+  const storeIdx=store==='GARIBALDI'?0:1;
+  document.querySelectorAll('.stab')[storeIdx].classList.add('active');
+  render();
+}
+
+// ── EXPORT EXCEL ──────────────────────────────────────────────────
+function exportExcel(){
+  const wb=XLSX.utils.book_new();
+  WEEKS.forEach((winfo,wi)=>{
+    const rows=[];
+    const header=['Negozio','Persona','Ruolo',...DAYS_FULL,'Ore totali'];
+    rows.push(header);
+    ['GARIBALDI','MARGHERA'].forEach(st=>{
+      Object.entries(schedule[st]||{}).forEach(([person,pdata])=>{
+        const week=pdata.weeks[wi];
+        let tot=0;
+        const dayVals=week.map(raw=>{
+          const {type,hours}=parseSlot(raw||'');
+          const h=parseHours(hours,type);
+          tot+=h;
+          if(!raw||type==='empty') return '';
+          if(type==='riposo') return 'Riposo';
+          if(type==='chiuso') return 'Chiuso';
+          return hours||type;
+        });
+        rows.push([st==='GARIBALDI'?'Garibaldi':'Marghera',person,pdata.role==='resp'?'Responsabile':'Supporto',...dayVals,tot]);
+      });
+    });
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=[{wch:12},{wch:14},{wch:14},...Array(7).fill({wch:16}),{wch:10}];
+    XLSX.utils.book_append_sheet(wb,ws,winfo.label.replace(/[\/–]/g,'-').substring(0,31));
+  });
+  // Summary sheet
+  const sumRows=[['Persona','Negozio',...WEEKS.map(w=>w.label),'Totale']];
+  ['GARIBALDI','MARGHERA'].forEach(st=>{
+    Object.entries(schedule[st]||{}).filter(([,p])=>p.role==='resp').forEach(([name,pdata])=>{
+      const weekTots=pdata.weeks.map(week=>{
+        let t=0;
+        week.forEach(raw=>{const {type,hours}=parseSlot(raw||'');t+=parseHours(hours,type);});
+        return t;
+      });
+      sumRows.push([name,st==='GARIBALDI'?'Garibaldi':'Marghera',...weekTots,weekTots.reduce((a,b)=>a+b,0)]);
+    });
+  });
+  const wsSum=XLSX.utils.aoa_to_sheet(sumRows);
+  XLSX.utils.book_append_sheet(wb,wsSum,'Riepilogo ore');
+  XLSX.writeFile(wb,'turni_garibaldi_marghera.xlsx');
+}
+
+// ── EXPORT PDF ────────────────────────────────────────────────────
+function exportPDF(){
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  const stores=getStores();
+  const w=WEEKS[currentWeek];
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(14);
+  doc.text(`Turni — ${w.label}`,14,16);
+  if(w.note){
+    doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(150);
+    doc.text(w.note,14,22);doc.setTextColor(0);
+  }
+  const head=[['Negozio','Persona','Ruolo',...DAYS.map((d,i)=>d+'\n'+w.dates[i]),'Tot h']];
+  const body=[];
+  stores.forEach(st=>{
+    Object.entries(schedule[st]||{}).forEach(([person,pdata])=>{
+      const row=pdata.weeks[currentWeek];
+      let tot=0;
+      const dayVals=row.map(raw=>{
+        const {type,hours}=parseSlot(raw||'');
+        const h=parseHours(hours,type);
+        tot+=h;
+        if(!raw||type==='empty') return '–';
+        if(type==='riposo') return 'Rip.';
+        if(type==='chiuso') return 'Chius.';
+        return hours||type;
+      });
+      body.push([st==='GARIBALDI'?'Garibaldi':'Marghera',person,pdata.role==='resp'?'Resp.':'Sup.',...dayVals,tot+'h']);
+    });
+  });
+  doc.autoTable({
+    head,body,startY:26,
+    styles:{fontSize:8,cellPadding:3,font:'helvetica'},
+    headStyles:{fillColor:[40,40,40],textColor:255,fontStyle:'bold',fontSize:8},
+    alternateRowStyles:{fillColor:[248,248,246]},
+    columnStyles:{0:{cellWidth:22},1:{cellWidth:24},2:{cellWidth:18}},
+    didParseCell:(d)=>{
+      const val=d.cell.raw;
+      if(typeof val==='string'){
+        if(val.includes('Rip.')) d.cell.styles.textColor=[160,30,30];
+        else if(val.includes('Chius.')) d.cell.styles.textColor=[120,120,120];
+        else if(val!=='–'&&val!=='Garibaldi'&&val!=='Marghera'&&d.row.section==='body'&&d.column.index>2&&d.column.index<10){
+          d.cell.styles.textColor=[26,107,60];
+        }
+      }
+    }
+  });
+  doc.setFontSize(7);doc.setTextColor(160);
+  doc.text(`Esportato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})}`,14,doc.internal.pageSize.height-6);
+  doc.save(`turni_${w.label.replace(/[^a-zA-Z0-9]/g,'_')}.pdf`);
+}
+
+// ── NOTES ─────────────────────────────────────────────────────────
+let noteStore='GARIBALDI';
+let noteDay=0;
+let noteSaveTimer=null;
+
+function noteKey(store,weekIdx,dayIdx){return `note_${store}_w${weekIdx}_d${dayIdx}`;}
+
+function setNoteStore(s,btn){
+  noteStore=s;
+  document.querySelectorAll('.note-stab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  loadNote();
+}
+
+function renderNoteDayTabs(){
+  const w=WEEKS[currentWeek];
+  const tabs=document.getElementById('note-day-tabs');
+  tabs.innerHTML=DAYS.map((d,i)=>`<button class="day-tab${i===noteDay?' active':''}" onclick="selectNoteDay(${i},this)">${d}<br><span style="font-size:9px;font-weight:400">${w.dates[i]}</span></button>`).join('');
+}
+
+function selectNoteDay(idx,btn){
+  noteDay=idx;
+  document.querySelectorAll('.day-tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  loadNote();
+}
+
+function loadNote(){
+  const val=localStorage.getItem(noteKey(noteStore,currentWeek,noteDay))||'';
+  document.getElementById('note-text').value=val;
+}
+
+function saveNote(){
+  clearTimeout(noteSaveTimer);
+  noteSaveTimer=setTimeout(()=>{
+    localStorage.setItem(noteKey(noteStore,currentWeek,noteDay),document.getElementById('note-text').value);
+    const s=document.getElementById('note-saved');
+    s.classList.add('show');
+    setTimeout(()=>s.classList.remove('show'),1800);
+  },600);
+}
+
+// ── TODOS ─────────────────────────────────────────────────────────
+let todos=JSON.parse(localStorage.getItem('todos_v1')||'[]');
+let todoFilter='tutti';
+
+function saveTodos(){localStorage.setItem('todos_v1',JSON.stringify(todos));}
+
+function setTodoFilter(f,btn){
+  todoFilter=f;
+  document.querySelectorAll('.todo-filter').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  renderTodos();
+}
+
+function addTodo(){
+  const input=document.getElementById('todo-input');
+  const text=input.value.trim();
+  if(!text) return;
+  todos.unshift({id:Date.now(),text,prio:document.getElementById('todo-prio').value,store:document.getElementById('todo-store').value,done:false,created:new Date().toLocaleDateString('it-IT')});
+  input.value='';
+  saveTodos();renderTodos();
+}
+
+function toggleTodo(id){
+  const t=todos.find(t=>t.id===id);
+  if(t){t.done=!t.done;saveTodos();renderTodos();}
+}
+
+function deleteTodo(id){
+  todos=todos.filter(t=>t.id!==id);
+  saveTodos();renderTodos();
+}
+
+function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function renderTodos(){
+  let filtered=todos;
+  if(todoFilter==='GARIBALDI') filtered=todos.filter(t=>t.store==='GARIBALDI');
+  else if(todoFilter==='MARGHERA') filtered=todos.filter(t=>t.store==='MARGHERA');
+  else if(todoFilter==='aperti') filtered=todos.filter(t=>!t.done);
+  else if(todoFilter==='alta') filtered=todos.filter(t=>t.prio==='alta');
+  const open=todos.filter(t=>!t.done).length;
+  document.getElementById('todo-count').textContent=`${open} da fare`;
+  const list=document.getElementById('todo-list');
+  if(!filtered.length){list.innerHTML='<div class="todo-empty">Nessuna attività</div>';return;}
+  const prioOrder={alta:0,media:1,bassa:2};
+  const sorted=[...filtered].sort((a,b)=>{if(a.done!==b.done)return a.done?1:-1;return prioOrder[a.prio]-prioOrder[b.prio];});
+  list.innerHTML=sorted.map(t=>`<div class="todo-item${t.done?' done':''}">
+    <div class="todo-check${t.done?' checked':''}" onclick="toggleTodo(${t.id})"></div>
+    <div class="todo-text">${escHtml(t.text)}<div style="font-size:10px;color:var(--text3);margin-top:2px">${t.created}</div></div>
+    <div class="todo-meta">
+      <span class="todo-store-badge ${t.store==='GARIBALDI'?'badge-gari':'badge-margh'}">${t.store==='GARIBALDI'?'Gar.':'Mar.'}</span>
+      <div class="prio-dot prio-${t.prio}" title="Priorità ${t.prio}"></div>
+      <button class="todo-del" onclick="deleteTodo(${t.id})">&#215;</button>
+    </div>
+  </div>`).join('');
+}
+
+// Init
+render();
+renderNoteDayTabs();
+loadNote();
+renderTodos();
+
+// Patch week navigation to refresh note tabs
+const _pw=prevWeek,_nw=nextWeek;
+prevWeek=function(){_pw();renderNoteDayTabs();loadNote();};
+nextWeek=function(){_nw();renderNoteDayTabs();loadNote();};
+</script>
+</body>
+</html>
