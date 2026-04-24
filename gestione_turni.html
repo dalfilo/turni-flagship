@@ -217,6 +217,7 @@ td.tot-cell{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;text-
       </button>
     </div>
     <button class="btn btn-sm" onclick="openAddPerson()">+ Persona</button>
+    <button class="btn btn-red btn-sm" onclick="resetSchedule()" title="Ripristina dati iniziali">↺ Reset</button>
   </div>
 </nav>
 
@@ -489,7 +490,30 @@ const initSched={
   }
 };
 
-let schedule=JSON.parse(JSON.stringify(initSched));
+// ── PERSISTENZA SCHEDULE ──────────────────────────────────────────
+const SCHED_KEY='schedule_v1';
+function saveSchedule(){
+  try{ localStorage.setItem(SCHED_KEY, JSON.stringify(schedule)); }
+  catch(e){ console.warn('saveSchedule failed',e); }
+}
+function loadSchedule(){
+  try{
+    const raw=localStorage.getItem(SCHED_KEY);
+    if(!raw) return null;
+    return JSON.parse(raw);
+  }catch(e){
+    console.warn('loadSchedule failed, using defaults',e);
+    return null;
+  }
+}
+function resetSchedule(){
+  if(!confirm('Sei sicuro di voler ripristinare i dati iniziali? Tutte le modifiche ai turni verranno perse.')) return;
+  localStorage.removeItem(SCHED_KEY);
+  schedule=JSON.parse(JSON.stringify(initSched));
+  render();
+}
+
+let schedule = loadSchedule() || JSON.parse(JSON.stringify(initSched));
 let currentWeek=0,currentStore='GARIBALDI';
 let _es,_ep,_ew,_ed;
 
@@ -624,10 +648,12 @@ function saveShift(){
   const t=document.getElementById('m-type').value;
   const h=document.getElementById('m-hours').value;
   schedule[_es][_ep].weeks[_ew][_ed]=t===''||t==='empty'?null:makeSlot(t,h);
+  saveSchedule();
   closeModal('modal-shift');render();
 }
 function deleteShift(){
   schedule[_es][_ep].weeks[_ew][_ed]=null;
+  saveSchedule();
   closeModal('modal-shift');render();
 }
 
@@ -655,6 +681,7 @@ function addPerson(){
   if(!name) return;
   if(!schedule[store]) schedule[store]={};
   schedule[store][name]={role,weeks:Array(7).fill(null).map(()=>Array(7).fill(null))};
+  saveSchedule();
   closeModal('modal-person');
   document.getElementById('p-name').value='';
   // Switch view to the store where the person was added
