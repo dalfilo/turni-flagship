@@ -180,6 +180,9 @@ td.tot-cell{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;text-
 .prio-label{font-size:10px;color:var(--text3)}
 .todo-del{width:20px;height:20px;border-radius:4px;border:none;background:transparent;color:var(--text3);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1}
 .todo-del:hover{background:var(--red-bg);color:var(--red)}
+.btn-del-person{width:18px;height:18px;border-radius:4px;border:1px solid transparent;background:transparent;color:var(--text3);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1;padding:0;font-family:'DM Sans',sans-serif;opacity:0;transition:opacity .15s}
+tr:hover .btn-del-person{opacity:1}
+.btn-del-person:hover{background:var(--red-bg);color:var(--red);border-color:#DFC3C3;opacity:1}
 .todo-store-badge{font-size:10px;padding:1px 6px;border-radius:10px;font-weight:500}
 .badge-gari{background:var(--green-bg);color:var(--green)}
 .badge-margh{background:var(--blue-bg);color:var(--blue)}
@@ -613,7 +616,7 @@ function render(){
           ${h>0?`<span class="shift-h">${h}h</span>`:''}
         </div></td>`;
       }).join('');
-      html+=`<tr><td><div class="person-name">${person}</div><div class="person-role">${pdata.role==='resp'?'Responsabile':'Supporto'}</div></td>${cells}<td class="tot-cell">${Math.round(weekH)}<span style="font-size:10px;font-weight:400;color:var(--text3)"> h</span></td></tr>`;
+      html+=`<tr><td><div style="display:flex;align-items:center;justify-content:space-between;gap:4px"><div><div class="person-name">${person}</div><div class="person-role">${pdata.role==='resp'?'Responsabile':'Supporto'}</div></div><button class="btn-del-person" title="Elimina persona" onclick="deletePerson('${st}','${encodeURIComponent(person)}')">&#215;</button></div></td>${cells}<td class="tot-cell">${Math.round(weekH)}<span style="font-size:10px;font-weight:400;color:var(--text3)"> h</span></td></tr>`;
     });
   });
   tbody.innerHTML=html;
@@ -690,6 +693,17 @@ function addPerson(){
   const storeIdx=store==='GARIBALDI'?0:1;
   document.querySelectorAll('.stab')[storeIdx].classList.add('active');
   render();
+}
+
+// Delete person
+function deletePerson(store, encodedPerson){
+  const person=decodeURIComponent(encodedPerson);
+  if(!confirm(`Eliminare "${person}" e tutti i suoi turni? L'operazione non è reversibile.`)) return;
+  if(schedule[store]&&schedule[store][person]!==undefined){
+    delete schedule[store][person];
+    saveSchedule();
+    render();
+  }
 }
 
 // ── EXPORT EXCEL ──────────────────────────────────────────────────
