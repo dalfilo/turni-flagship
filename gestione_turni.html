@@ -103,6 +103,7 @@ td.tot-cell{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;text-
 .pill-riposo{background:var(--red-bg);color:var(--red);border:1px solid #DFC3C3}
 .pill-chiuso{background:var(--gray2);color:var(--text3);border:1px solid var(--gray3)}
 .pill-support{background:var(--blue-bg);color:var(--blue);border:1px solid #C3D5EE;font-style:italic}
+.pill-malattia{background:#FDECEA;color:#B71C1C;border:1px solid #F5B9B9}
 .pill-empty{background:transparent;color:var(--text3);border:1px dashed var(--gray3)}
 .shift-h{font-size:9px;color:var(--text3);font-family:'DM Mono',monospace}
 
@@ -180,6 +181,9 @@ td.tot-cell{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;text-
 .prio-label{font-size:10px;color:var(--text3)}
 .todo-del{width:20px;height:20px;border-radius:4px;border:none;background:transparent;color:var(--text3);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1}
 .todo-del:hover{background:var(--red-bg);color:var(--red)}
+.btn-del-person{width:18px;height:18px;border-radius:4px;border:1px solid transparent;background:transparent;color:var(--text3);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1;padding:0;font-family:'DM Sans',sans-serif;opacity:0;transition:opacity .15s}
+tr:hover .btn-del-person{opacity:1}
+.btn-del-person:hover{background:var(--red-bg);color:var(--red);border-color:#DFC3C3;opacity:1}
 .todo-store-badge{font-size:10px;padding:1px 6px;border-radius:10px;font-weight:500}
 .badge-gari{background:var(--green-bg);color:var(--green)}
 .badge-margh{background:var(--blue-bg);color:var(--blue)}
@@ -232,6 +236,7 @@ td.tot-cell{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;text-
         <button class="week-btn" onclick="nextWeek()">&#8594;</button>
       </div>
       <span class="week-note" id="wnote" style="display:none"></span>
+      <button class="btn btn-sm" onclick="addWeek()" title="Aggiunge 7 giorni al calendario">+ Settimana</button>
     </div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
       <div class="store-tabs">
@@ -258,6 +263,7 @@ td.tot-cell{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;text-
   <div class="legend">
     <div class="leg"><div class="leg-dot" style="background:var(--green-bg);border:1px solid #C3DDD0"></div>Turno lavoro</div>
     <div class="leg"><div class="leg-dot" style="background:var(--red-bg);border:1px solid #DFC3C3"></div>Riposo</div>
+    <div class="leg"><div class="leg-dot" style="background:#FDECEA;border:1px solid #F5B9B9"></div>Malattia</div>
     <div class="leg"><div class="leg-dot" style="background:var(--gray2);border:1px solid var(--gray3)"></div>Chiuso</div>
     <div class="leg"><div class="leg-dot" style="background:var(--blue-bg);border:1px solid #C3D5EE"></div>Supporto</div>
     <div class="leg"><div class="leg-dot" style="background:transparent;border:1px dashed var(--gray3)"></div>Da assegnare</div>
@@ -334,6 +340,7 @@ td.tot-cell{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;text-
         <select id="m-type" onchange="onTypeChange()">
           <option value="work">Turno lavoro</option>
           <option value="riposo">Riposo</option>
+          <option value="malattia">Malattia</option>
           <option value="chiuso">Chiuso (negozio chiuso)</option>
           <option value="support">Supporto</option>
           <option value="empty">Vuoto / da assegnare</option>
@@ -402,7 +409,7 @@ const WEEKS=[
 ];
 
 function parseHours(txt,type){
-  if(!txt||['riposo','chiuso','empty'].includes(type)) return 0;
+  if(!txt||['riposo','chiuso','empty','malattia'].includes(type)) return 0;
   let t=0;
   txt.split('/').forEach(s=>{const p=s.trim().split('-');if(p.length===2){const a=parseFloat(p[0]),b=parseFloat(p[1]);if(!isNaN(a)&&!isNaN(b))t+=b-a;}});
   return t;
@@ -492,6 +499,8 @@ const initSched={
 
 // ── PERSISTENZA SCHEDULE ──────────────────────────────────────────
 const SCHED_KEY='schedule_v1';
+const EXTRA_WEEKS_KEY='extra_weeks_v1';
+
 function saveSchedule(){
   try{ localStorage.setItem(SCHED_KEY, JSON.stringify(schedule)); }
   catch(e){ console.warn('saveSchedule failed',e); }
@@ -506,13 +515,58 @@ function loadSchedule(){
     return null;
   }
 }
+function saveExtraWeeks(){
+  const extra=WEEKS.slice(7);
+  if(extra.length) localStorage.setItem(EXTRA_WEEKS_KEY,JSON.stringify(extra));
+  else localStorage.removeItem(EXTRA_WEEKS_KEY);
+}
+function loadExtraWeeks(){
+  try{
+    const raw=localStorage.getItem(EXTRA_WEEKS_KEY);
+    if(!raw) return;
+    JSON.parse(raw).forEach(w=>WEEKS.push(w));
+  }catch(e){ console.warn('loadExtraWeeks failed',e); }
+}
 function resetSchedule(){
   if(!confirm('Sei sicuro di voler ripristinare i dati iniziali? Tutte le modifiche ai turni verranno perse.')) return;
   localStorage.removeItem(SCHED_KEY);
+  localStorage.removeItem(EXTRA_WEEKS_KEY);
+  WEEKS.splice(7,WEEKS.length-7);
   schedule=JSON.parse(JSON.stringify(initSched));
+  currentWeek=Math.min(currentWeek,WEEKS.length-1);
   render();
 }
 
+// ── SETTIMANE FUTURE ──────────────────────────────────────────────
+const MONTH_NAMES=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+function addWeek(){
+  const lastWeek=WEEKS[WEEKS.length-1];
+  const [ld,lm]=lastWeek.dates[6].split('/').map(Number);
+  const base=new Date(2026,lm-1,ld);
+  const newDates=[];
+  for(let i=1;i<=7;i++){
+    const d=new Date(base);d.setDate(base.getDate()+i);
+    newDates.push(`${d.getDate()}/${d.getMonth()+1}`);
+  }
+  const [fd,fm]=newDates[0].split('/').map(Number);
+  const [ed2,em]=newDates[6].split('/').map(Number);
+  const label=fm===em?`${fd}–${ed2} ${MONTH_NAMES[em-1]} 2026`:`${fd} ${MONTH_NAMES[fm-1]} – ${ed2} ${MONTH_NAMES[em-1]} 2026`;
+  WEEKS.push({label,dates:newDates,note:''});
+  // Estende l'array settimane di ogni persona
+  ['GARIBALDI','MARGHERA'].forEach(st=>{
+    Object.values(schedule[st]||{}).forEach(pdata=>{
+      while(pdata.weeks.length<WEEKS.length) pdata.weeks.push(Array(7).fill(null));
+    });
+  });
+  saveSchedule();
+  saveExtraWeeks();
+  currentWeek=WEEKS.length-1;
+  render();
+  renderNoteDayTabs();
+  loadNote();
+}
+
+loadExtraWeeks();
 let schedule = loadSchedule() || JSON.parse(JSON.stringify(initSched));
 let currentWeek=0,currentStore='GARIBALDI';
 let _es,_ep,_ew,_ed;
@@ -525,7 +579,7 @@ function setStore(s,btn){
 }
 
 function prevWeek(){if(currentWeek>0){currentWeek--;render();}}
-function nextWeek(){if(currentWeek<6){currentWeek++;render();}}
+function nextWeek(){if(currentWeek<WEEKS.length-1){currentWeek++;render();}}
 
 function getStores(){
   if(currentStore==='ENTRAMBI') return ['GARIBALDI','MARGHERA'];
@@ -550,7 +604,7 @@ function render(){
   else noteEl.style.display='none';
 
   const stores=getStores();
-  let totalOre=0,totalPersone=0,slotVuoti=0,giorniLav=0;
+  let totalOre=0,totalPersone=0,slotVuoti=0,giorniLav=0,totalMalattia=0;
   stores.forEach(st=>{
     Object.keys(schedule[st]||{}).forEach(p=>{
       totalPersone++;
@@ -560,6 +614,7 @@ function render(){
         const h=parseHours(hours,type);
         totalOre+=h;
         if(type==='work'||type==='support') giorniLav++;
+        if(type==='malattia') totalMalattia++;
         if(!s||type==='empty') slotVuoti++;
       });
     });
@@ -580,7 +635,7 @@ function render(){
     <div class="stat">
       <div class="stat-label">Turni attivi</div>
       <div class="stat-val good">${giorniLav}</div>
-      <div class="stat-sub">su ${totalPersone*7} slot totali</div>
+      <div class="stat-sub">su ${totalPersone*7} slot totali${totalMalattia>0?` · <span style="color:#B71C1C">${totalMalattia} malattia</span>`:''}</div>
     </div>
     <div class="stat">
       <div class="stat-label">Slot da assegnare</div>
@@ -607,13 +662,13 @@ function render(){
         weekH+=h;
         let cls2='pill-'+type;
         if(type==='empty'||!raw) cls2='pill-empty';
-        let lbl=type==='riposo'?'Riposo':type==='chiuso'?'Chiuso':type==='empty'||!raw?'+':hours||type;
+        let lbl=type==='riposo'?'Riposo':type==='chiuso'?'Chiuso':type==='malattia'?'Malattia':type==='empty'||!raw?'+':hours||type;
         return `<td><div class="shift-cell">
           <span class="shift-pill ${cls2}" data-store="${st}" data-person="${encodeURIComponent(person)}" data-week="${currentWeek}" data-day="${di}" data-raw="${encodeURIComponent(raw||'')}">${lbl}</span>
           ${h>0?`<span class="shift-h">${h}h</span>`:''}
         </div></td>`;
       }).join('');
-      html+=`<tr><td><div class="person-name">${person}</div><div class="person-role">${pdata.role==='resp'?'Responsabile':'Supporto'}</div></td>${cells}<td class="tot-cell">${Math.round(weekH)}<span style="font-size:10px;font-weight:400;color:var(--text3)"> h</span></td></tr>`;
+      html+=`<tr><td><div style="display:flex;align-items:center;justify-content:space-between;gap:4px"><div><div class="person-name">${person}</div><div class="person-role">${pdata.role==='resp'?'Responsabile':'Supporto'}</div></div><button class="btn-del-person" title="Elimina persona" onclick="deletePerson('${st}','${encodeURIComponent(person)}')">&#215;</button></div></td>${cells}<td class="tot-cell">${Math.round(weekH)}<span style="font-size:10px;font-weight:400;color:var(--text3)"> h</span></td></tr>`;
     });
   });
   tbody.innerHTML=html;
@@ -680,7 +735,7 @@ function addPerson(){
   const role=document.getElementById('p-role').value;
   if(!name) return;
   if(!schedule[store]) schedule[store]={};
-  schedule[store][name]={role,weeks:Array(7).fill(null).map(()=>Array(7).fill(null))};
+  schedule[store][name]={role,weeks:Array(WEEKS.length).fill(null).map(()=>Array(7).fill(null))};
   saveSchedule();
   closeModal('modal-person');
   document.getElementById('p-name').value='';
@@ -690,6 +745,17 @@ function addPerson(){
   const storeIdx=store==='GARIBALDI'?0:1;
   document.querySelectorAll('.stab')[storeIdx].classList.add('active');
   render();
+}
+
+// Delete person
+function deletePerson(store, encodedPerson){
+  const person=decodeURIComponent(encodedPerson);
+  if(!confirm(`Eliminare "${person}" e tutti i suoi turni? L'operazione non è reversibile.`)) return;
+  if(schedule[store]&&schedule[store][person]!==undefined){
+    delete schedule[store][person];
+    saveSchedule();
+    render();
+  }
 }
 
 // ── EXPORT EXCEL ──────────────────────────────────────────────────
@@ -710,6 +776,7 @@ function exportExcel(){
           if(!raw||type==='empty') return '';
           if(type==='riposo') return 'Riposo';
           if(type==='chiuso') return 'Chiuso';
+          if(type==='malattia') return 'Malattia';
           return hours||type;
         });
         rows.push([st==='GARIBALDI'?'Garibaldi':'Marghera',person,pdata.role==='resp'?'Responsabile':'Supporto',...dayVals,tot]);
@@ -762,6 +829,7 @@ function exportPDF(){
         if(!raw||type==='empty') return '–';
         if(type==='riposo') return 'Rip.';
         if(type==='chiuso') return 'Chius.';
+        if(type==='malattia') return 'Mal.';
         return hours||type;
       });
       body.push([st==='GARIBALDI'?'Garibaldi':'Marghera',person,pdata.role==='resp'?'Resp.':'Sup.',...dayVals,tot+'h']);
@@ -777,6 +845,7 @@ function exportPDF(){
       const val=d.cell.raw;
       if(typeof val==='string'){
         if(val.includes('Rip.')) d.cell.styles.textColor=[160,30,30];
+        else if(val.includes('Mal.')) d.cell.styles.textColor=[183,28,28];
         else if(val.includes('Chius.')) d.cell.styles.textColor=[120,120,120];
         else if(val!=='–'&&val!=='Garibaldi'&&val!=='Marghera'&&d.row.section==='body'&&d.column.index>2&&d.column.index<10){
           d.cell.styles.textColor=[26,107,60];
