@@ -103,6 +103,7 @@ td.tot-cell{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;text-
 .pill-riposo{background:var(--red-bg);color:var(--red);border:1px solid #DFC3C3}
 .pill-chiuso{background:var(--gray2);color:var(--text3);border:1px solid var(--gray3)}
 .pill-support{background:var(--blue-bg);color:var(--blue);border:1px solid #C3D5EE;font-style:italic}
+.pill-malattia{background:#FDECEA;color:#B71C1C;border:1px solid #F5B9B9}
 .pill-empty{background:transparent;color:var(--text3);border:1px dashed var(--gray3)}
 .shift-h{font-size:9px;color:var(--text3);font-family:'DM Mono',monospace}
 
@@ -262,6 +263,7 @@ tr:hover .btn-del-person{opacity:1}
   <div class="legend">
     <div class="leg"><div class="leg-dot" style="background:var(--green-bg);border:1px solid #C3DDD0"></div>Turno lavoro</div>
     <div class="leg"><div class="leg-dot" style="background:var(--red-bg);border:1px solid #DFC3C3"></div>Riposo</div>
+    <div class="leg"><div class="leg-dot" style="background:#FDECEA;border:1px solid #F5B9B9"></div>Malattia</div>
     <div class="leg"><div class="leg-dot" style="background:var(--gray2);border:1px solid var(--gray3)"></div>Chiuso</div>
     <div class="leg"><div class="leg-dot" style="background:var(--blue-bg);border:1px solid #C3D5EE"></div>Supporto</div>
     <div class="leg"><div class="leg-dot" style="background:transparent;border:1px dashed var(--gray3)"></div>Da assegnare</div>
@@ -338,6 +340,7 @@ tr:hover .btn-del-person{opacity:1}
         <select id="m-type" onchange="onTypeChange()">
           <option value="work">Turno lavoro</option>
           <option value="riposo">Riposo</option>
+          <option value="malattia">Malattia</option>
           <option value="chiuso">Chiuso (negozio chiuso)</option>
           <option value="support">Supporto</option>
           <option value="empty">Vuoto / da assegnare</option>
@@ -406,7 +409,7 @@ const WEEKS=[
 ];
 
 function parseHours(txt,type){
-  if(!txt||['riposo','chiuso','empty'].includes(type)) return 0;
+  if(!txt||['riposo','chiuso','empty','malattia'].includes(type)) return 0;
   let t=0;
   txt.split('/').forEach(s=>{const p=s.trim().split('-');if(p.length===2){const a=parseFloat(p[0]),b=parseFloat(p[1]);if(!isNaN(a)&&!isNaN(b))t+=b-a;}});
   return t;
@@ -601,7 +604,7 @@ function render(){
   else noteEl.style.display='none';
 
   const stores=getStores();
-  let totalOre=0,totalPersone=0,slotVuoti=0,giorniLav=0;
+  let totalOre=0,totalPersone=0,slotVuoti=0,giorniLav=0,totalMalattia=0;
   stores.forEach(st=>{
     Object.keys(schedule[st]||{}).forEach(p=>{
       totalPersone++;
@@ -611,6 +614,7 @@ function render(){
         const h=parseHours(hours,type);
         totalOre+=h;
         if(type==='work'||type==='support') giorniLav++;
+        if(type==='malattia') totalMalattia++;
         if(!s||type==='empty') slotVuoti++;
       });
     });
@@ -631,7 +635,7 @@ function render(){
     <div class="stat">
       <div class="stat-label">Turni attivi</div>
       <div class="stat-val good">${giorniLav}</div>
-      <div class="stat-sub">su ${totalPersone*7} slot totali</div>
+      <div class="stat-sub">su ${totalPersone*7} slot totali${totalMalattia>0?` · <span style="color:#B71C1C">${totalMalattia} malattia</span>`:''}</div>
     </div>
     <div class="stat">
       <div class="stat-label">Slot da assegnare</div>
@@ -658,7 +662,7 @@ function render(){
         weekH+=h;
         let cls2='pill-'+type;
         if(type==='empty'||!raw) cls2='pill-empty';
-        let lbl=type==='riposo'?'Riposo':type==='chiuso'?'Chiuso':type==='empty'||!raw?'+':hours||type;
+        let lbl=type==='riposo'?'Riposo':type==='chiuso'?'Chiuso':type==='malattia'?'Malattia':type==='empty'||!raw?'+':hours||type;
         return `<td><div class="shift-cell">
           <span class="shift-pill ${cls2}" data-store="${st}" data-person="${encodeURIComponent(person)}" data-week="${currentWeek}" data-day="${di}" data-raw="${encodeURIComponent(raw||'')}">${lbl}</span>
           ${h>0?`<span class="shift-h">${h}h</span>`:''}
@@ -772,6 +776,7 @@ function exportExcel(){
           if(!raw||type==='empty') return '';
           if(type==='riposo') return 'Riposo';
           if(type==='chiuso') return 'Chiuso';
+          if(type==='malattia') return 'Malattia';
           return hours||type;
         });
         rows.push([st==='GARIBALDI'?'Garibaldi':'Marghera',person,pdata.role==='resp'?'Responsabile':'Supporto',...dayVals,tot]);
@@ -824,6 +829,7 @@ function exportPDF(){
         if(!raw||type==='empty') return '–';
         if(type==='riposo') return 'Rip.';
         if(type==='chiuso') return 'Chius.';
+        if(type==='malattia') return 'Mal.';
         return hours||type;
       });
       body.push([st==='GARIBALDI'?'Garibaldi':'Marghera',person,pdata.role==='resp'?'Resp.':'Sup.',...dayVals,tot+'h']);
@@ -839,6 +845,7 @@ function exportPDF(){
       const val=d.cell.raw;
       if(typeof val==='string'){
         if(val.includes('Rip.')) d.cell.styles.textColor=[160,30,30];
+        else if(val.includes('Mal.')) d.cell.styles.textColor=[183,28,28];
         else if(val.includes('Chius.')) d.cell.styles.textColor=[120,120,120];
         else if(val!=='–'&&val!=='Garibaldi'&&val!=='Marghera'&&d.row.section==='body'&&d.column.index>2&&d.column.index<10){
           d.cell.styles.textColor=[26,107,60];
