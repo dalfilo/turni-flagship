@@ -568,7 +568,26 @@ function addWeek(){
 
 loadExtraWeeks();
 let schedule = loadSchedule() || JSON.parse(JSON.stringify(initSched));
-let currentWeek=0,currentStore='GARIBALDI';
+  function findCurrentWeekIndex(){
+  const today=new Date();
+  const todayKey=today.getFullYear()*10000 + (today.getMonth()+1)*100 + today.getDate();
+
+  for(let i=0;i<WEEKS.length;i++){
+    const w=WEEKS[i];
+    const [sd,sm]=w.dates[0].split('/').map(Number);
+    const [ed,em]=w.dates[6].split('/').map(Number);
+    // Asumimos año 2026 como en el resto del código; si em < sm cruza fin de año
+    const startKey=2026*10000 + sm*100 + sd;
+    const endKey=2026*10000 + em*100 + ed;
+    if(todayKey>=startKey && todayKey<=endKey) return i;
+  }
+  // Si hoy es antes de la primera semana → primera; si es después de la última → última
+  const [fd,fm]=WEEKS[0].dates[0].split('/').map(Number);
+  const firstKey=2026*10000 + fm*100 + fd;
+  if(todayKey<firstKey) return 0;
+  return WEEKS.length-1;
+}
+let currentWeek=findCurrentWeekIndex(),currentStore='GARIBALDI';
 let _es,_ep,_ew,_ed;
 
 function setStore(s,btn){
