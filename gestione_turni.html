@@ -235,6 +235,7 @@ tr:hover .btn-del-person{opacity:1}
         <button class="week-btn" onclick="nextWeek()">&#8594;</button>
       </div>
       <span class="week-note" id="wnote" style="display:none"></span>
+      <button class="btn btn-sm" onclick="addWeek()" title="Aggiunge 7 giorni al calendario">+ Settimana</button>
     </div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
       <div class="store-tabs">
@@ -495,6 +496,8 @@ const initSched={
 
 // ── PERSISTENZA SCHEDULE ──────────────────────────────────────────
 const SCHED_KEY='schedule_v1';
+const EXTRA_WEEKS_KEY='extra_weeks_v1';
+
 function saveSchedule(){
   try{ localStorage.setItem(SCHED_KEY, JSON.stringify(schedule)); }
   catch(e){ console.warn('saveSchedule failed',e); }
@@ -509,13 +512,58 @@ function loadSchedule(){
     return null;
   }
 }
+function saveExtraWeeks(){
+  const extra=WEEKS.slice(7);
+  if(extra.length) localStorage.setItem(EXTRA_WEEKS_KEY,JSON.stringify(extra));
+  else localStorage.removeItem(EXTRA_WEEKS_KEY);
+}
+function loadExtraWeeks(){
+  try{
+    const raw=localStorage.getItem(EXTRA_WEEKS_KEY);
+    if(!raw) return;
+    JSON.parse(raw).forEach(w=>WEEKS.push(w));
+  }catch(e){ console.warn('loadExtraWeeks failed',e); }
+}
 function resetSchedule(){
   if(!confirm('Sei sicuro di voler ripristinare i dati iniziali? Tutte le modifiche ai turni verranno perse.')) return;
   localStorage.removeItem(SCHED_KEY);
+  localStorage.removeItem(EXTRA_WEEKS_KEY);
+  WEEKS.splice(7,WEEKS.length-7);
   schedule=JSON.parse(JSON.stringify(initSched));
+  currentWeek=Math.min(currentWeek,WEEKS.length-1);
   render();
 }
 
+// ── SETTIMANE FUTURE ──────────────────────────────────────────────
+const MONTH_NAMES=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+function addWeek(){
+  const lastWeek=WEEKS[WEEKS.length-1];
+  const [ld,lm]=lastWeek.dates[6].split('/').map(Number);
+  const base=new Date(2026,lm-1,ld);
+  const newDates=[];
+  for(let i=1;i<=7;i++){
+    const d=new Date(base);d.setDate(base.getDate()+i);
+    newDates.push(`${d.getDate()}/${d.getMonth()+1}`);
+  }
+  const [fd,fm]=newDates[0].split('/').map(Number);
+  const [ed2,em]=newDates[6].split('/').map(Number);
+  const label=fm===em?`${fd}–${ed2} ${MONTH_NAMES[em-1]} 2026`:`${fd} ${MONTH_NAMES[fm-1]} – ${ed2} ${MONTH_NAMES[em-1]} 2026`;
+  WEEKS.push({label,dates:newDates,note:''});
+  // Estende l'array settimane di ogni persona
+  ['GARIBALDI','MARGHERA'].forEach(st=>{
+    Object.values(schedule[st]||{}).forEach(pdata=>{
+      while(pdata.weeks.length<WEEKS.length) pdata.weeks.push(Array(7).fill(null));
+    });
+  });
+  saveSchedule();
+  saveExtraWeeks();
+  currentWeek=WEEKS.length-1;
+  render();
+  renderNoteDayTabs();
+  loadNote();
+}
+
+loadExtraWeeks();
 let schedule = loadSchedule() || JSON.parse(JSON.stringify(initSched));
 let currentWeek=0,currentStore='GARIBALDI';
 let _es,_ep,_ew,_ed;
@@ -528,7 +576,7 @@ function setStore(s,btn){
 }
 
 function prevWeek(){if(currentWeek>0){currentWeek--;render();}}
-function nextWeek(){if(currentWeek<6){currentWeek++;render();}}
+function nextWeek(){if(currentWeek<WEEKS.length-1){currentWeek++;render();}}
 
 function getStores(){
   if(currentStore==='ENTRAMBI') return ['GARIBALDI','MARGHERA'];
@@ -683,7 +731,7 @@ function addPerson(){
   const role=document.getElementById('p-role').value;
   if(!name) return;
   if(!schedule[store]) schedule[store]={};
-  schedule[store][name]={role,weeks:Array(7).fill(null).map(()=>Array(7).fill(null))};
+  schedule[store][name]={role,weeks:Array(WEEKS.length).fill(null).map(()=>Array(7).fill(null))};
   saveSchedule();
   closeModal('modal-person');
   document.getElementById('p-name').value='';
