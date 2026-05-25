@@ -25,7 +25,6 @@
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh}
 a{color:inherit}
 
-/* Layout */
 .shell{display:flex;flex-direction:column;min-height:100vh}
 .topnav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:50}
 .topnav-brand{font-size:15px;font-weight:600;letter-spacing:-.3px;display:flex;align-items:center;gap:10px}
@@ -34,7 +33,6 @@ a{color:inherit}
 .main{flex:1;padding:24px}
 .content{max-width:1200px;margin:0 auto}
 
-/* Buttons */
 button{font-family:'DM Sans',sans-serif;cursor:pointer;border:none;outline:none;transition:all .15s}
 .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius);font-size:13px;font-weight:500;border:1px solid var(--border);background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
 .btn:hover{background:var(--surface2);border-color:var(--gray3)}
@@ -49,12 +47,15 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer;border:none;outline:none;
 .btn-red:hover{background:#f0d0d0}
 .btn-sm{padding:5px 10px;font-size:12px}
 .btn-icon{padding:7px;border-radius:var(--radius)}
-svg-icon{display:inline-block;width:14px;height:14px;vertical-align:middle}
 
-/* Cards */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow)}
+/* Connection status */
+.conn-status{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:500;background:var(--surface2);border:1px solid var(--border);color:var(--text2)}
+.conn-dot{width:7px;height:7px;border-radius:50%;background:var(--text3);transition:background .3s}
+.conn-status.online .conn-dot{background:#2E9155;box-shadow:0 0 0 2px rgba(46,145,85,.2)}
+.conn-status.offline .conn-dot{background:var(--red)}
+.conn-status.syncing .conn-dot{background:var(--amber);animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 
-/* Stats */
 .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:20px}
 .stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px}
 .stat-label{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
@@ -64,7 +65,6 @@ svg-icon{display:inline-block;width:14px;height:14px;vertical-align:middle}
 .stat-val.warn{color:var(--amber)}
 .stat-val.bad{color:var(--red)}
 
-/* Controls */
 .controls{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px}
 .week-nav{display:flex;align-items:center;gap:8px}
 .week-btn{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);font-size:16px;color:var(--text2)}
@@ -77,7 +77,6 @@ svg-icon{display:inline-block;width:14px;height:14px;vertical-align:middle}
 .stab.gari.active{color:var(--green)}
 .stab.margh.active{color:var(--blue)}
 
-/* Table */
 .table-wrap{overflow-x:auto;border-radius:var(--radius-lg);border:1px solid var(--border);background:var(--surface)}
 table{width:100%;border-collapse:collapse;font-size:12px;min-width:720px}
 thead th{padding:10px 8px;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid var(--border);background:var(--surface2);text-align:center;white-space:nowrap}
@@ -95,7 +94,6 @@ td.tot-cell{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;text-
 .person-name{font-weight:500;font-size:13px;color:var(--text)}
 .person-role{font-size:10px;color:var(--text3);font-weight:400}
 
-/* Shift cells */
 .shift-cell{display:flex;flex-direction:column;align-items:center;gap:2px}
 .shift-pill{display:inline-flex;align-items:center;justify-content:center;padding:3px 7px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;transition:all .12s;white-space:nowrap;min-width:72px;font-family:'DM Mono',monospace}
 .shift-pill:hover{opacity:.8;transform:scale(1.04)}
@@ -103,11 +101,9 @@ td.tot-cell{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;text-
 .pill-riposo{background:var(--red-bg);color:var(--red);border:1px solid #DFC3C3}
 .pill-chiuso{background:var(--gray2);color:var(--text3);border:1px solid var(--gray3)}
 .pill-support{background:var(--blue-bg);color:var(--blue);border:1px solid #C3D5EE;font-style:italic}
-.pill-malattia{background:#FDECEA;color:#B71C1C;border:1px solid #F5B9B9}
 .pill-empty{background:transparent;color:var(--text3);border:1px dashed var(--gray3)}
 .shift-h{font-size:9px;color:var(--text3);font-family:'DM Mono',monospace}
 
-/* Modal */
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;align-items:center;justify-content:center;padding:16px}
 .overlay.open{display:flex}
 .modal{background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border);box-shadow:var(--shadow-lg);width:340px;max-width:100%;overflow:hidden}
@@ -121,20 +117,12 @@ td.tot-cell{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;text-
 .form-group select:focus,.form-group input:focus{border-color:var(--text);box-shadow:0 0 0 2px rgba(26,25,23,.08)}
 .modal-foot{padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
 
-/* Legend */
 .legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
 .leg{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text3)}
 .leg-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
 
-/* Export panel */
 .export-bar{display:flex;gap:8px;align-items:center}
 
-/* Progress badge */
-.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500}
-.badge-ok{background:var(--green-bg);color:var(--green)}
-.badge-warn{background:var(--amber-bg);color:var(--amber)}
-
-/* Notes & Todos */
 .bottom-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px}
 @media(max-width:860px){.bottom-grid{grid-template-columns:1fr}}
 .section-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
@@ -145,7 +133,6 @@ td.tot-cell{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;text-
 .icon-todo{background:var(--green-bg);color:var(--green)}
 .section-body{padding:14px 16px}
 
-/* Day notes */
 .day-tabs{display:flex;gap:4px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px}
 .day-tab{padding:4px 10px;border-radius:6px;font-size:11px;font-weight:500;color:var(--text3);cursor:pointer;border:1px solid transparent;white-space:nowrap;background:transparent;flex-shrink:0}
 .day-tab:hover{background:var(--surface2);color:var(--text2)}
@@ -160,7 +147,6 @@ td.tot-cell{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;text-
 .note-saved{font-size:11px;color:var(--green);opacity:0;transition:opacity .3s}
 .note-saved.show{opacity:1}
 
-/* Todos */
 .todo-add{display:flex;gap:8px;margin-bottom:12px}
 .todo-add input{flex:1;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);background:var(--surface);outline:none}
 .todo-add input:focus{border-color:var(--green);box-shadow:0 0 0 2px rgba(26,107,60,.07)}
@@ -181,9 +167,6 @@ td.tot-cell{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;text-
 .prio-label{font-size:10px;color:var(--text3)}
 .todo-del{width:20px;height:20px;border-radius:4px;border:none;background:transparent;color:var(--text3);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1}
 .todo-del:hover{background:var(--red-bg);color:var(--red)}
-.btn-del-person{width:18px;height:18px;border-radius:4px;border:1px solid transparent;background:transparent;color:var(--text3);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1;padding:0;font-family:'DM Sans',sans-serif;opacity:0;transition:opacity .15s}
-tr:hover .btn-del-person{opacity:1}
-.btn-del-person:hover{background:var(--red-bg);color:var(--red);border-color:#DFC3C3;opacity:1}
 .todo-store-badge{font-size:10px;padding:1px 6px;border-radius:10px;font-weight:500}
 .badge-gari{background:var(--green-bg);color:var(--green)}
 .badge-margh{background:var(--blue-bg);color:var(--blue)}
@@ -192,7 +175,13 @@ tr:hover .btn-del-person{opacity:1}
 .todo-filter.active{background:var(--surface2);color:var(--text);border-color:var(--gray3)}
 .todo-empty{font-size:12px;color:var(--text3);text-align:center;padding:20px 0;font-style:italic}
 
-/* Responsive */
+/* Loading overlay */
+.loading-overlay{position:fixed;inset:0;background:var(--bg);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;transition:opacity .3s}
+.loading-overlay.hidden{opacity:0;pointer-events:none}
+.loading-spinner{width:32px;height:32px;border:3px solid var(--gray3);border-top-color:var(--text);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:13px;color:var(--text2)}
+
 @media(max-width:700px){
   .stats{grid-template-columns:repeat(2,1fr)}
   .topnav{padding:0 14px}
@@ -202,6 +191,13 @@ tr:hover .btn-del-person{opacity:1}
 </style>
 </head>
 <body>
+
+<!-- Loading screen -->
+<div class="loading-overlay" id="loading">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Connessione a Firebase...</div>
+</div>
+
 <div class="shell">
 
 <nav class="topnav">
@@ -210,6 +206,10 @@ tr:hover .btn-del-person{opacity:1}
     Garibaldi &amp; Marghera
   </div>
   <div class="topnav-actions">
+    <div class="conn-status offline" id="conn-status" title="Stato connessione Firestore">
+      <span class="conn-dot"></span>
+      <span id="conn-label">offline</span>
+    </div>
     <div class="export-bar">
       <button class="btn btn-green btn-sm" onclick="exportExcel()">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
@@ -221,7 +221,6 @@ tr:hover .btn-del-person{opacity:1}
       </button>
     </div>
     <button class="btn btn-sm" onclick="openAddPerson()">+ Persona</button>
-    <button class="btn btn-red btn-sm" onclick="resetSchedule()" title="Ripristina dati iniziali">↺ Reset</button>
   </div>
 </nav>
 
@@ -236,17 +235,12 @@ tr:hover .btn-del-person{opacity:1}
         <button class="week-btn" onclick="nextWeek()">&#8594;</button>
       </div>
       <span class="week-note" id="wnote" style="display:none"></span>
-      <button class="btn btn-sm" onclick="addWeek()" title="Aggiunge 7 giorni al calendario">+ Settimana</button>
     </div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
       <div class="store-tabs">
         <button class="stab gari active" onclick="setStore('GARIBALDI',this)">Garibaldi</button>
         <button class="stab margh" onclick="setStore('MARGHERA',this)">Marghera</button>
         <button class="stab" onclick="setStore('ENTRAMBI',this)">Entrambi</button>
-      </div>
-      <div class="export-bar" style="display:none" id="mobile-export">
-        <button class="btn btn-green btn-sm" onclick="exportExcel()">Excel</button>
-        <button class="btn btn-blue btn-sm" onclick="exportPDF()">PDF</button>
       </div>
     </div>
   </div>
@@ -263,17 +257,14 @@ tr:hover .btn-del-person{opacity:1}
   <div class="legend">
     <div class="leg"><div class="leg-dot" style="background:var(--green-bg);border:1px solid #C3DDD0"></div>Turno lavoro</div>
     <div class="leg"><div class="leg-dot" style="background:var(--red-bg);border:1px solid #DFC3C3"></div>Riposo</div>
-    <div class="leg"><div class="leg-dot" style="background:#FDECEA;border:1px solid #F5B9B9"></div>Malattia</div>
     <div class="leg"><div class="leg-dot" style="background:var(--gray2);border:1px solid var(--gray3)"></div>Chiuso</div>
     <div class="leg"><div class="leg-dot" style="background:var(--blue-bg);border:1px solid #C3D5EE"></div>Supporto</div>
     <div class="leg"><div class="leg-dot" style="background:transparent;border:1px dashed var(--gray3)"></div>Da assegnare</div>
     <div style="margin-left:auto;font-size:11px;color:var(--text3)">Clicca una cella per modificare il turno</div>
   </div>
 
-  <!-- Notes & Todos -->
   <div class="bottom-grid">
 
-    <!-- Daily Notes -->
     <div class="section-card">
       <div class="section-head">
         <h2><span class="section-icon icon-note">📝</span> Note giornaliere</h2>
@@ -286,11 +277,10 @@ tr:hover .btn-del-person{opacity:1}
         </div>
         <div class="day-tabs" id="note-day-tabs"></div>
         <textarea class="note-textarea" id="note-text" placeholder="Scrivi una nota per questo giorno..." oninput="saveNote()"></textarea>
-        <div style="font-size:11px;color:var(--text3);margin-top:6px">Le note vengono salvate automaticamente nel browser.</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:6px">Le note sono sincronizzate tra tutti i dispositivi.</div>
       </div>
     </div>
 
-    <!-- To-Do List -->
     <div class="section-card">
       <div class="section-head">
         <h2><span class="section-icon icon-todo">✓</span> To-do negozio</h2>
@@ -327,7 +317,6 @@ tr:hover .btn-del-person{opacity:1}
 </main>
 </div>
 
-<!-- Edit Shift Modal -->
 <div class="overlay" id="modal-shift">
   <div class="modal">
     <div class="modal-head">
@@ -340,7 +329,6 @@ tr:hover .btn-del-person{opacity:1}
         <select id="m-type" onchange="onTypeChange()">
           <option value="work">Turno lavoro</option>
           <option value="riposo">Riposo</option>
-          <option value="malattia">Malattia</option>
           <option value="chiuso">Chiuso (negozio chiuso)</option>
           <option value="support">Supporto</option>
           <option value="empty">Vuoto / da assegnare</option>
@@ -361,7 +349,6 @@ tr:hover .btn-del-person{opacity:1}
   </div>
 </div>
 
-<!-- Add Person Modal -->
 <div class="overlay" id="modal-person">
   <div class="modal">
     <div class="modal-head">
@@ -395,6 +382,36 @@ tr:hover .btn-del-person{opacity:1}
   </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════════════════════
+     FIREBASE: import as ES module
+     ═══════════════════════════════════════════════════════════════ -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+  import {
+    getFirestore, doc, getDoc, setDoc, onSnapshot, collection,
+    deleteDoc, enableIndexedDbPersistence
+  } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAcg-2QeNFFTm_smwIA2n9_Wtw_9aRe7HA",
+    authDomain: "turni-dalfilo.firebaseapp.com",
+    projectId: "turni-dalfilo",
+    storageBucket: "turni-dalfilo.firebasestorage.app",
+    messagingSenderId: "218028315141",
+    appId: "1:218028315141:web:72613259fc66442a32826c"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+
+  // Offline persistence (best-effort; ignore if already enabled by another tab)
+  try { await enableIndexedDbPersistence(db); } catch(e) { /* ignore */ }
+
+  // Expose to non-module code
+  window.__fb = { db, doc, getDoc, setDoc, onSnapshot, collection, deleteDoc };
+  window.dispatchEvent(new Event('firebase-ready'));
+</script>
+
 <script>
 const DAYS=['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];
 const DAYS_FULL=['Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato','Domenica'];
@@ -409,21 +426,19 @@ const WEEKS=[
 ];
 
 function parseHours(txt,type){
-  if(!txt||['riposo','chiuso','empty','malattia'].includes(type)) return 0;
+  if(!txt||['riposo','chiuso','empty'].includes(type)) return 0;
   let t=0;
   txt.split('/').forEach(s=>{const p=s.trim().split('-');if(p.length===2){const a=parseFloat(p[0]),b=parseFloat(p[1]);if(!isNaN(a)&&!isNaN(b))t+=b-a;}});
   return t;
 }
-
 function parseSlot(raw){
   if(!raw) return {type:'empty',hours:''};
   const idx=raw.indexOf(':');
   return {type:raw.substring(0,idx),hours:raw.substring(idx+1)};
 }
-
 function makeSlot(type,hours){return type+':'+hours;}
 
-// Initial schedule data: schedule[store][person] = array of 7 weeks, each week = array of 7 day slots
+// Initial data — seeded into Firestore the first time the app runs
 const initSched={
   GARIBALDI:{
     'Sabrina':{role:'resp',weeks:[
@@ -437,12 +452,8 @@ const initSched={
     ]},
     'Chiara':{role:'resp',weeks:[
       ['work:10-13/14-19','riposo:','work:15-19','riposo:','work:14-19','work:11-13/14-19','work:10-13/14-19'],
-      [null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null],[null,null,null,null,null,null,null],[null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null],[null,null,null,null,null,null,null],[null,null,null,null,null,null,null],
     ]},
     'Davide':{role:'support',weeks:[
       [null,null,null,null,null,null,null],
@@ -497,143 +508,136 @@ const initSched={
   }
 };
 
-// ── PERSISTENZA SCHEDULE ──────────────────────────────────────────
-const SCHED_KEY='schedule_v1';
-const EXTRA_WEEKS_KEY='extra_weeks_v1';
-
-function saveSchedule(){
-  try{ localStorage.setItem(SCHED_KEY, JSON.stringify(schedule)); }
-  catch(e){ console.warn('saveSchedule failed',e); }
-}
-function loadSchedule(){
-  try{
-    const raw=localStorage.getItem(SCHED_KEY);
-    if(!raw) return null;
-    return JSON.parse(raw);
-  }catch(e){
-    console.warn('loadSchedule failed, using defaults',e);
-    return null;
-  }
-}
-function saveExtraWeeks(){
-  const extra=WEEKS.slice(7);
-  if(extra.length) localStorage.setItem(EXTRA_WEEKS_KEY,JSON.stringify(extra));
-  else localStorage.removeItem(EXTRA_WEEKS_KEY);
-}
-function loadExtraWeeks(){
-  try{
-    const raw=localStorage.getItem(EXTRA_WEEKS_KEY);
-    if(!raw) return;
-    JSON.parse(raw).forEach(w=>WEEKS.push(w));
-  }catch(e){ console.warn('loadExtraWeeks failed',e); }
-}
-function resetSchedule(){
-  if(!confirm('Sei sicuro di voler ripristinare i dati iniziali? Tutte le modifiche ai turni verranno perse.')) return;
-  localStorage.removeItem(SCHED_KEY);
-  localStorage.removeItem(EXTRA_WEEKS_KEY);
-  WEEKS.splice(7,WEEKS.length-7);
-  schedule=JSON.parse(JSON.stringify(initSched));
-  currentWeek=Math.min(currentWeek,WEEKS.length-1);
-  render();
-}
-
-// ── SETTIMANE FUTURE ──────────────────────────────────────────────
-const MONTH_NAMES=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
-function addWeek(){
-  const lastWeek=WEEKS[WEEKS.length-1];
-  const [ld,lm]=lastWeek.dates[6].split('/').map(Number);
-  const base=new Date(2026,lm-1,ld);
-  const newDates=[];
-  for(let i=1;i<=7;i++){
-    const d=new Date(base);d.setDate(base.getDate()+i);
-    newDates.push(`${d.getDate()}/${d.getMonth()+1}`);
-  }
-  const [fd,fm]=newDates[0].split('/').map(Number);
-  const [ed2,em]=newDates[6].split('/').map(Number);
-  const label=fm===em?`${fd}–${ed2} ${MONTH_NAMES[em-1]} 2026`:`${fd} ${MONTH_NAMES[fm-1]} – ${ed2} ${MONTH_NAMES[em-1]} 2026`;
-  WEEKS.push({label,dates:newDates,note:''});
-  // Estende l'array settimane di ogni persona
-  ['GARIBALDI','MARGHERA'].forEach(st=>{
-    Object.values(schedule[st]||{}).forEach(pdata=>{
-      while(pdata.weeks.length<WEEKS.length) pdata.weeks.push(Array(7).fill(null));
-    });
-  });
-  saveSchedule();
-  saveExtraWeeks();
-  currentWeek=WEEKS.length-1;
-  render();
-  renderNoteDayTabs();
-  loadNote();
-}
-
-loadExtraWeeks();
-let schedule = loadSchedule() || JSON.parse(JSON.stringify(initSched));
-  function findCurrentWeekIndex(){
-  const today=new Date();
-  const todayKey=today.getFullYear()*10000 + (today.getMonth()+1)*100 + today.getDate();
-
-  for(let i=0;i<WEEKS.length;i++){
-    const w=WEEKS[i];
-    const [sd,sm]=w.dates[0].split('/').map(Number);
-    const [ed,em]=w.dates[6].split('/').map(Number);
-    // Asumimos año 2026 como en el resto del código; si em < sm cruza fin de año
-    const startKey=2026*10000 + sm*100 + sd;
-    const endKey=2026*10000 + em*100 + ed;
-    if(todayKey>=startKey && todayKey<=endKey) return i;
-  }
-  // Si hoy es antes de la primera semana → primera; si es después de la última → última
-  const [fd,fm]=WEEKS[0].dates[0].split('/').map(Number);
-  const firstKey=2026*10000 + fm*100 + fd;
-  if(todayKey<firstKey) return 0;
-  return WEEKS.length-1;
-}
-let currentWeek=findCurrentWeekIndex(),currentStore='GARIBALDI';
+// ── State ─────────────────────────────────────────────────────────
+let schedule = {};
+let notes    = {};        // notes[`${store}_w${w}_d${d}`] = string
+let todos    = [];
+let currentWeek=0, currentStore='GARIBALDI';
 let _es,_ep,_ew,_ed;
+let noteStore='GARIBALDI', noteDay=0, noteSaveTimer=null;
+let todoFilter='tutti';
 
+// Firebase handles populated when ready
+let fb = null;
+let saveTimer = null;
+let suppressNextSnapshot = false;  // ignore the echo from our own writes
+
+// ── Connection status UI ──────────────────────────────────────────
+function setConn(state, label){
+  const el = document.getElementById('conn-status');
+  el.classList.remove('online','offline','syncing');
+  el.classList.add(state);
+  document.getElementById('conn-label').textContent = label || state;
+}
+
+// ── Firestore: load + listen + save ───────────────────────────────
+async function initFirebase(){
+  fb = window.__fb;
+  if(!fb){ setConn('offline','errore SDK'); return; }
+
+  setConn('syncing','caricamento...');
+
+  const schedRef = fb.doc(fb.db, 'app', 'schedule');
+  const notesRef = fb.doc(fb.db, 'app', 'notes');
+  const todosRef = fb.doc(fb.db, 'app', 'todos');
+
+  // First-run seeding: if no schedule doc, write initSched
+  try {
+    const snap = await fb.getDoc(schedRef);
+    if(!snap.exists()){
+      console.log('[turni] First run — seeding initial schedule to Firestore');
+      await fb.setDoc(schedRef, { data: initSched });
+    }
+  } catch(e){
+    console.error('[turni] seeding failed', e);
+    setConn('offline','errore: ' + (e.code || e.message));
+    document.getElementById('loading').classList.add('hidden');
+    return;
+  }
+
+  // Real-time listeners
+  fb.onSnapshot(schedRef, (snap) => {
+    if(suppressNextSnapshot){ suppressNextSnapshot = false; }
+    if(snap.exists()){
+      schedule = snap.data().data || {};
+      render();
+      document.getElementById('loading').classList.add('hidden');
+      setConn('online','online');
+    }
+  }, (err) => {
+    console.error('[turni] schedule listener error', err);
+    setConn('offline','errore lettura');
+  });
+
+  fb.onSnapshot(notesRef, (snap) => {
+    notes = snap.exists() ? (snap.data().data || {}) : {};
+    loadNote();
+  }, (err) => console.error('[turni] notes listener error', err));
+
+  fb.onSnapshot(todosRef, (snap) => {
+    todos = snap.exists() ? (snap.data().data || []) : [];
+    renderTodos();
+  }, (err) => console.error('[turni] todos listener error', err));
+
+  // Browser online/offline events
+  window.addEventListener('online',  () => setConn('online','online'));
+  window.addEventListener('offline', () => setConn('offline','offline'));
+}
+
+function scheduleSave(){
+  setConn('syncing','salvataggio...');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    try {
+      suppressNextSnapshot = true;
+      await fb.setDoc(fb.doc(fb.db, 'app', 'schedule'), { data: schedule });
+      setConn('online','online');
+    } catch(e){
+      console.error('[turni] save failed', e);
+      setConn('offline','errore salvataggio');
+    }
+  }, 400);
+}
+
+async function saveNotes(){
+  try {
+    await fb.setDoc(fb.doc(fb.db, 'app', 'notes'), { data: notes });
+  } catch(e){ console.error('[turni] notes save failed', e); }
+}
+
+async function saveTodosFB(){
+  try {
+    await fb.setDoc(fb.doc(fb.db, 'app', 'todos'), { data: todos });
+  } catch(e){ console.error('[turni] todos save failed', e); }
+}
+
+// ── UI ────────────────────────────────────────────────────────────
 function setStore(s,btn){
   currentStore=s;
   document.querySelectorAll('.stab').forEach(t=>t.classList.remove('active'));
   if(btn) btn.classList.add('active');
   render();
 }
-
-function prevWeek(){if(currentWeek>0){currentWeek--;render();}}
-function nextWeek(){if(currentWeek<WEEKS.length-1){currentWeek++;render();}}
-
-function getStores(){
-  if(currentStore==='ENTRAMBI') return ['GARIBALDI','MARGHERA'];
-  return [currentStore];
-}
-
-function calcPersonWeek(store,person,week){
-  const data=schedule[store]?.[person];
-  if(!data) return 0;
-  const row=data.weeks[week];
-  if(!row) return 0;
-  let tot=0;
-  row.forEach(s=>{const {type,hours}=parseSlot(s);tot+=parseHours(hours,type);});
-  return tot;
-}
+function prevWeek(){if(currentWeek>0){currentWeek--;render();renderNoteDayTabs();loadNote();}}
+function nextWeek(){if(currentWeek<6){currentWeek++;render();renderNoteDayTabs();loadNote();}}
+function getStores(){return currentStore==='ENTRAMBI'?['GARIBALDI','MARGHERA']:[currentStore];}
 
 function render(){
   const w=WEEKS[currentWeek];
   document.getElementById('wlabel').textContent=w.label;
   const noteEl=document.getElementById('wnote');
-  if(w.note){noteEl.textContent=w.note;noteEl.style.display='';}
-  else noteEl.style.display='none';
+  if(w.note){noteEl.textContent=w.note;noteEl.style.display='';} else noteEl.style.display='none';
 
   const stores=getStores();
-  let totalOre=0,totalPersone=0,slotVuoti=0,giorniLav=0,totalMalattia=0;
+  let totalOre=0,totalPersone=0,slotVuoti=0,giorniLav=0;
   stores.forEach(st=>{
     Object.keys(schedule[st]||{}).forEach(p=>{
       totalPersone++;
-      const row=schedule[st][p].weeks[currentWeek];
+      const row=schedule[st][p].weeks[currentWeek] || [];
       row.forEach(s=>{
         const {type,hours}=parseSlot(s||'');
-        const h=parseHours(hours,type);
-        totalOre+=h;
+        totalOre+=parseHours(hours,type);
         if(type==='work'||type==='support') giorniLav++;
-        if(type==='malattia') totalMalattia++;
         if(!s||type==='empty') slotVuoti++;
       });
     });
@@ -641,30 +645,13 @@ function render(){
 
   const oreColor=totalOre>=60?'good':totalOre>=30?'warn':'bad';
   document.getElementById('stats').innerHTML=`
-    <div class="stat">
-      <div class="stat-label">Ore totali settimana</div>
-      <div class="stat-val ${oreColor}">${Math.round(totalOre)}<span style="font-size:16px;font-weight:400"> h</span></div>
-      <div class="stat-sub">${stores.length>1?'tutti i negozi':currentStore.toLowerCase()}</div>
-    </div>
-    <div class="stat">
-      <div class="stat-label">Persone pianificate</div>
-      <div class="stat-val">${totalPersone}</div>
-      <div class="stat-sub">di cui ${stores.flatMap(st=>Object.values(schedule[st]||{})).filter(p=>p.role==='support').length} supporto</div>
-    </div>
-    <div class="stat">
-      <div class="stat-label">Turni attivi</div>
-      <div class="stat-val good">${giorniLav}</div>
-      <div class="stat-sub">su ${totalPersone*7} slot totali${totalMalattia>0?` · <span style="color:#B71C1C">${totalMalattia} malattia</span>`:''}</div>
-    </div>
-    <div class="stat">
-      <div class="stat-label">Slot da assegnare</div>
-      <div class="stat-val ${slotVuoti>0?'warn':'good'}">${slotVuoti}</div>
-      <div class="stat-sub">${slotVuoti===0?'tutto pianificato':'da completare'}</div>
-    </div>
+    <div class="stat"><div class="stat-label">Ore totali settimana</div><div class="stat-val ${oreColor}">${Math.round(totalOre)}<span style="font-size:16px;font-weight:400"> h</span></div><div class="stat-sub">${stores.length>1?'tutti i negozi':currentStore.toLowerCase()}</div></div>
+    <div class="stat"><div class="stat-label">Persone pianificate</div><div class="stat-val">${totalPersone}</div><div class="stat-sub">di cui ${stores.flatMap(st=>Object.values(schedule[st]||{})).filter(p=>p.role==='support').length} supporto</div></div>
+    <div class="stat"><div class="stat-label">Turni attivi</div><div class="stat-val good">${giorniLav}</div><div class="stat-sub">su ${totalPersone*7} slot totali</div></div>
+    <div class="stat"><div class="stat-label">Slot da assegnare</div><div class="stat-val ${slotVuoti>0?'warn':'good'}">${slotVuoti}</div><div class="stat-sub">${slotVuoti===0?'tutto pianificato':'da completare'}</div></div>
   `;
 
-  const thead=document.getElementById('thead');
-  thead.innerHTML=`<tr><th>Persona</th>${DAYS.map((d,i)=>`<th>${d}<br><span style="font-size:9px;font-weight:400">${w.dates[i]}</span></th>`).join('')}<th>Tot ore</th></tr>`;
+  document.getElementById('thead').innerHTML=`<tr><th>Persona</th>${DAYS.map((d,i)=>`<th>${d}<br><span style="font-size:9px;font-weight:400">${w.dates[i]}</span></th>`).join('')}<th>Tot ore</th></tr>`;
 
   const tbody=document.getElementById('tbody');
   let html='';
@@ -672,7 +659,7 @@ function render(){
     const cls=st==='GARIBALDI'?'gari':'margh';
     html+=`<tr class="store-section ${cls}"><td colspan="9">${st==='GARIBALDI'?'Garibaldi':'Marghera'} — settimana ${w.label}</td></tr>`;
     Object.entries(schedule[st]||{}).forEach(([person,pdata])=>{
-      const row=pdata.weeks[currentWeek];
+      const row=pdata.weeks[currentWeek] || [null,null,null,null,null,null,null];
       let weekH=0;
       const cells=DAYS.map((_,di)=>{
         const raw=row[di]||null;
@@ -681,13 +668,10 @@ function render(){
         weekH+=h;
         let cls2='pill-'+type;
         if(type==='empty'||!raw) cls2='pill-empty';
-        let lbl=type==='riposo'?'Riposo':type==='chiuso'?'Chiuso':type==='malattia'?'Malattia':type==='empty'||!raw?'+':hours||type;
-        return `<td><div class="shift-cell">
-          <span class="shift-pill ${cls2}" data-store="${st}" data-person="${encodeURIComponent(person)}" data-week="${currentWeek}" data-day="${di}" data-raw="${encodeURIComponent(raw||'')}">${lbl}</span>
-          ${h>0?`<span class="shift-h">${h}h</span>`:''}
-        </div></td>`;
+        let lbl=type==='riposo'?'Riposo':type==='chiuso'?'Chiuso':type==='empty'||!raw?'+':hours||type;
+        return `<td><div class="shift-cell"><span class="shift-pill ${cls2}" data-store="${st}" data-person="${encodeURIComponent(person)}" data-week="${currentWeek}" data-day="${di}" data-raw="${encodeURIComponent(raw||'')}">${lbl}</span>${h>0?`<span class="shift-h">${h}h</span>`:''}</div></td>`;
       }).join('');
-      html+=`<tr><td><div style="display:flex;align-items:center;justify-content:space-between;gap:4px"><div><div class="person-name">${person}</div><div class="person-role">${pdata.role==='resp'?'Responsabile':'Supporto'}</div></div><button class="btn-del-person" title="Elimina persona" onclick="deletePerson('${st}','${encodeURIComponent(person)}')">&#215;</button></div></td>${cells}<td class="tot-cell">${Math.round(weekH)}<span style="font-size:10px;font-weight:400;color:var(--text3)"> h</span></td></tr>`;
+      html+=`<tr><td><div class="person-name">${person}</div><div class="person-role">${pdata.role==='resp'?'Responsabile':'Supporto'}</div></td>${cells}<td class="tot-cell">${Math.round(weekH)}<span style="font-size:10px;font-weight:400;color:var(--text3)"> h</span></td></tr>`;
     });
   });
   tbody.innerHTML=html;
@@ -717,36 +701,26 @@ function updateCalc(){
   if(ore>0){calc.textContent=`Ore calcolate: ${ore}h`;calc.style.display='';}
   else calc.style.display='none';
 }
-document.getElementById('m-hours').addEventListener('input',updateCalc);
+
 function saveShift(){
   const t=document.getElementById('m-type').value;
   const h=document.getElementById('m-hours').value;
+  if(!schedule[_es]) schedule[_es]={};
+  if(!schedule[_es][_ep]) return;
+  if(!schedule[_es][_ep].weeks[_ew]) schedule[_es][_ep].weeks[_ew]=[null,null,null,null,null,null,null];
   schedule[_es][_ep].weeks[_ew][_ed]=t===''||t==='empty'?null:makeSlot(t,h);
-  saveSchedule();
+  scheduleSave();
   closeModal('modal-shift');render();
 }
 function deleteShift(){
-  schedule[_es][_ep].weeks[_ew][_ed]=null;
-  saveSchedule();
+  if(schedule[_es]?.[_ep]?.weeks?.[_ew]){
+    schedule[_es][_ep].weeks[_ew][_ed]=null;
+    scheduleSave();
+  }
   closeModal('modal-shift');render();
 }
-
 function closeModal(id){document.getElementById(id).classList.remove('open');}
-document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
 
-// Event delegation: handle clicks on shift pills
-document.getElementById('tbody').addEventListener('click',function(e){
-  const pill=e.target.closest('.shift-pill');
-  if(!pill) return;
-  const st=pill.dataset.store;
-  const person=decodeURIComponent(pill.dataset.person);
-  const week=parseInt(pill.dataset.week);
-  const day=parseInt(pill.dataset.day);
-  const raw=decodeURIComponent(pill.dataset.raw);
-  openModal(st,person,week,day,raw);
-});
-
-// Add person
 function openAddPerson(){document.getElementById('modal-person').classList.add('open');}
 function addPerson(){
   const name=document.getElementById('p-name').value.trim();
@@ -754,11 +728,10 @@ function addPerson(){
   const role=document.getElementById('p-role').value;
   if(!name) return;
   if(!schedule[store]) schedule[store]={};
-  schedule[store][name]={role,weeks:Array(WEEKS.length).fill(null).map(()=>Array(7).fill(null))};
-  saveSchedule();
+  schedule[store][name]={role,weeks:Array(7).fill(null).map(()=>Array(7).fill(null))};
+  scheduleSave();
   closeModal('modal-person');
   document.getElementById('p-name').value='';
-  // Switch view to the store where the person was added
   currentStore=store;
   document.querySelectorAll('.stab').forEach(t=>t.classList.remove('active'));
   const storeIdx=store==='GARIBALDI'?0:1;
@@ -766,27 +739,15 @@ function addPerson(){
   render();
 }
 
-// Delete person
-function deletePerson(store, encodedPerson){
-  const person=decodeURIComponent(encodedPerson);
-  if(!confirm(`Eliminare "${person}" e tutti i suoi turni? L'operazione non è reversibile.`)) return;
-  if(schedule[store]&&schedule[store][person]!==undefined){
-    delete schedule[store][person];
-    saveSchedule();
-    render();
-  }
-}
-
-// ── EXPORT EXCEL ──────────────────────────────────────────────────
+// ── Export Excel ──────────────────────────────────────────────────
 function exportExcel(){
   const wb=XLSX.utils.book_new();
   WEEKS.forEach((winfo,wi)=>{
     const rows=[];
-    const header=['Negozio','Persona','Ruolo',...DAYS_FULL,'Ore totali'];
-    rows.push(header);
+    rows.push(['Negozio','Persona','Ruolo',...DAYS_FULL,'Ore totali']);
     ['GARIBALDI','MARGHERA'].forEach(st=>{
       Object.entries(schedule[st]||{}).forEach(([person,pdata])=>{
-        const week=pdata.weeks[wi];
+        const week=pdata.weeks[wi] || [];
         let tot=0;
         const dayVals=week.map(raw=>{
           const {type,hours}=parseSlot(raw||'');
@@ -795,7 +756,6 @@ function exportExcel(){
           if(!raw||type==='empty') return '';
           if(type==='riposo') return 'Riposo';
           if(type==='chiuso') return 'Chiuso';
-          if(type==='malattia') return 'Malattia';
           return hours||type;
         });
         rows.push([st==='GARIBALDI'?'Garibaldi':'Marghera',person,pdata.role==='resp'?'Responsabile':'Supporto',...dayVals,tot]);
@@ -805,50 +765,42 @@ function exportExcel(){
     ws['!cols']=[{wch:12},{wch:14},{wch:14},...Array(7).fill({wch:16}),{wch:10}];
     XLSX.utils.book_append_sheet(wb,ws,winfo.label.replace(/[\/–]/g,'-').substring(0,31));
   });
-  // Summary sheet
   const sumRows=[['Persona','Negozio',...WEEKS.map(w=>w.label),'Totale']];
   ['GARIBALDI','MARGHERA'].forEach(st=>{
     Object.entries(schedule[st]||{}).filter(([,p])=>p.role==='resp').forEach(([name,pdata])=>{
       const weekTots=pdata.weeks.map(week=>{
         let t=0;
-        week.forEach(raw=>{const {type,hours}=parseSlot(raw||'');t+=parseHours(hours,type);});
+        (week||[]).forEach(raw=>{const {type,hours}=parseSlot(raw||'');t+=parseHours(hours,type);});
         return t;
       });
       sumRows.push([name,st==='GARIBALDI'?'Garibaldi':'Marghera',...weekTots,weekTots.reduce((a,b)=>a+b,0)]);
     });
   });
-  const wsSum=XLSX.utils.aoa_to_sheet(sumRows);
-  XLSX.utils.book_append_sheet(wb,wsSum,'Riepilogo ore');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sumRows),'Riepilogo ore');
   XLSX.writeFile(wb,'turni_garibaldi_marghera.xlsx');
 }
 
-// ── EXPORT PDF ────────────────────────────────────────────────────
+// ── Export PDF ────────────────────────────────────────────────────
 function exportPDF(){
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
   const stores=getStores();
   const w=WEEKS[currentWeek];
-  doc.setFont('helvetica','bold');
-  doc.setFontSize(14);
+  doc.setFont('helvetica','bold');doc.setFontSize(14);
   doc.text(`Turni — ${w.label}`,14,16);
-  if(w.note){
-    doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(150);
-    doc.text(w.note,14,22);doc.setTextColor(0);
-  }
+  if(w.note){doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(150);doc.text(w.note,14,22);doc.setTextColor(0);}
   const head=[['Negozio','Persona','Ruolo',...DAYS.map((d,i)=>d+'\n'+w.dates[i]),'Tot h']];
   const body=[];
   stores.forEach(st=>{
     Object.entries(schedule[st]||{}).forEach(([person,pdata])=>{
-      const row=pdata.weeks[currentWeek];
+      const row=pdata.weeks[currentWeek] || [];
       let tot=0;
       const dayVals=row.map(raw=>{
         const {type,hours}=parseSlot(raw||'');
-        const h=parseHours(hours,type);
-        tot+=h;
+        const h=parseHours(hours,type);tot+=h;
         if(!raw||type==='empty') return '–';
         if(type==='riposo') return 'Rip.';
         if(type==='chiuso') return 'Chius.';
-        if(type==='malattia') return 'Mal.';
         return hours||type;
       });
       body.push([st==='GARIBALDI'?'Garibaldi':'Marghera',person,pdata.role==='resp'?'Resp.':'Sup.',...dayVals,tot+'h']);
@@ -864,7 +816,6 @@ function exportPDF(){
       const val=d.cell.raw;
       if(typeof val==='string'){
         if(val.includes('Rip.')) d.cell.styles.textColor=[160,30,30];
-        else if(val.includes('Mal.')) d.cell.styles.textColor=[183,28,28];
         else if(val.includes('Chius.')) d.cell.styles.textColor=[120,120,120];
         else if(val!=='–'&&val!=='Garibaldi'&&val!=='Marghera'&&d.row.section==='body'&&d.column.index>2&&d.column.index<10){
           d.cell.styles.textColor=[26,107,60];
@@ -877,82 +828,62 @@ function exportPDF(){
   doc.save(`turni_${w.label.replace(/[^a-zA-Z0-9]/g,'_')}.pdf`);
 }
 
-// ── NOTES ─────────────────────────────────────────────────────────
-let noteStore='GARIBALDI';
-let noteDay=0;
-let noteSaveTimer=null;
-
-function noteKey(store,weekIdx,dayIdx){return `note_${store}_w${weekIdx}_d${dayIdx}`;}
-
+// ── Notes ─────────────────────────────────────────────────────────
+function noteKey(store,w,d){return `${store}_w${w}_d${d}`;}
 function setNoteStore(s,btn){
   noteStore=s;
   document.querySelectorAll('.note-stab').forEach(t=>t.classList.remove('active'));
   btn.classList.add('active');
   loadNote();
 }
-
 function renderNoteDayTabs(){
   const w=WEEKS[currentWeek];
-  const tabs=document.getElementById('note-day-tabs');
-  tabs.innerHTML=DAYS.map((d,i)=>`<button class="day-tab${i===noteDay?' active':''}" onclick="selectNoteDay(${i},this)">${d}<br><span style="font-size:9px;font-weight:400">${w.dates[i]}</span></button>`).join('');
+  document.getElementById('note-day-tabs').innerHTML=DAYS.map((d,i)=>`<button class="day-tab${i===noteDay?' active':''}" onclick="selectNoteDay(${i},this)">${d}<br><span style="font-size:9px;font-weight:400">${w.dates[i]}</span></button>`).join('');
 }
-
 function selectNoteDay(idx,btn){
   noteDay=idx;
   document.querySelectorAll('.day-tab').forEach(t=>t.classList.remove('active'));
   btn.classList.add('active');
   loadNote();
 }
-
 function loadNote(){
-  const val=localStorage.getItem(noteKey(noteStore,currentWeek,noteDay))||'';
-  document.getElementById('note-text').value=val;
+  document.getElementById('note-text').value = notes[noteKey(noteStore,currentWeek,noteDay)] || '';
 }
-
 function saveNote(){
   clearTimeout(noteSaveTimer);
-  noteSaveTimer=setTimeout(()=>{
-    localStorage.setItem(noteKey(noteStore,currentWeek,noteDay),document.getElementById('note-text').value);
+  noteSaveTimer=setTimeout(async () => {
+    notes[noteKey(noteStore,currentWeek,noteDay)] = document.getElementById('note-text').value;
+    await saveNotes();
     const s=document.getElementById('note-saved');
     s.classList.add('show');
     setTimeout(()=>s.classList.remove('show'),1800);
   },600);
 }
 
-// ── TODOS ─────────────────────────────────────────────────────────
-let todos=JSON.parse(localStorage.getItem('todos_v1')||'[]');
-let todoFilter='tutti';
-
-function saveTodos(){localStorage.setItem('todos_v1',JSON.stringify(todos));}
-
+// ── Todos ─────────────────────────────────────────────────────────
 function setTodoFilter(f,btn){
   todoFilter=f;
   document.querySelectorAll('.todo-filter').forEach(t=>t.classList.remove('active'));
   btn.classList.add('active');
   renderTodos();
 }
-
 function addTodo(){
   const input=document.getElementById('todo-input');
   const text=input.value.trim();
   if(!text) return;
   todos.unshift({id:Date.now(),text,prio:document.getElementById('todo-prio').value,store:document.getElementById('todo-store').value,done:false,created:new Date().toLocaleDateString('it-IT')});
   input.value='';
-  saveTodos();renderTodos();
+  saveTodosFB();renderTodos();
 }
-
 function toggleTodo(id){
   const t=todos.find(t=>t.id===id);
-  if(t){t.done=!t.done;saveTodos();renderTodos();}
+  if(t){t.done=!t.done;saveTodosFB();renderTodos();}
 }
-
 function deleteTodo(id){
   todos=todos.filter(t=>t.id!==id);
-  saveTodos();renderTodos();
+  saveTodosFB();renderTodos();
 }
-
 function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-
 function renderTodos(){
   let filtered=todos;
   if(todoFilter==='GARIBALDI') filtered=todos.filter(t=>t.store==='GARIBALDI');
@@ -976,16 +907,39 @@ function renderTodos(){
   </div>`).join('');
 }
 
-// Init
-render();
+// ── Wire up & boot ────────────────────────────────────────────────
+document.getElementById('m-hours').addEventListener('input',updateCalc);
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+document.getElementById('tbody').addEventListener('click',function(e){
+  const pill=e.target.closest('.shift-pill');
+  if(!pill) return;
+  openModal(pill.dataset.store, decodeURIComponent(pill.dataset.person), parseInt(pill.dataset.week), parseInt(pill.dataset.day), decodeURIComponent(pill.dataset.raw));
+});
+
+// Expose functions called from inline onclick handlers
+Object.assign(window, {
+  setStore, prevWeek, nextWeek, openModal, onTypeChange, saveShift, deleteShift,
+  closeModal, openAddPerson, addPerson, exportExcel, exportPDF,
+  setNoteStore, selectNoteDay, saveNote,
+  setTodoFilter, addTodo, toggleTodo, deleteTodo
+});
+
+// Render initial empty UI immediately, then wait for Firebase
 renderNoteDayTabs();
-loadNote();
 renderTodos();
 
-// Patch week navigation to refresh note tabs
-const _pw=prevWeek,_nw=nextWeek;
-prevWeek=function(){_pw();renderNoteDayTabs();loadNote();};
-nextWeek=function(){_nw();renderNoteDayTabs();loadNote();};
+if(window.__fb){
+  initFirebase();
+} else {
+  window.addEventListener('firebase-ready', initFirebase, { once: true });
+  // Safety timeout in case the module fails silently
+  setTimeout(() => {
+    if(!fb){
+      setConn('offline','timeout');
+      document.getElementById('loading').classList.add('hidden');
+    }
+  }, 10000);
+}
 </script>
 </body>
 </html>
