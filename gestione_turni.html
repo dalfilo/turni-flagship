@@ -66,7 +66,12 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer;border:none;outline:none;
 .stat-val.bad{color:var(--red)}
 
 .controls{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px}
-.week-nav{display:flex;align-items:center;gap:8px}
+.week-nav{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.date-picker{padding:6px 8px;border-radius:var(--radius);border:1px solid var(--border);font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text2);background:var(--surface);outline:none;cursor:pointer}
+.date-picker:hover{border-color:var(--gray3)}
+.date-picker:focus{border-color:var(--text);box-shadow:0 0 0 2px rgba(26,25,23,.08)}
+.today-btn{padding:5px 12px;font-weight:500}
+.today-btn.is-current{background:var(--green-bg);color:var(--green);border-color:#C3DDD0}
 .week-btn{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);font-size:16px;color:var(--text2)}
 .week-btn:hover{background:var(--surface2)}
 .week-label{font-size:15px;font-weight:600;min-width:170px;text-align:center;letter-spacing:-.3px}
@@ -230,9 +235,11 @@ td.tot-cell{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;text-
   <div class="controls">
     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
       <div class="week-nav">
-        <button class="week-btn" onclick="prevWeek()">&#8592;</button>
+        <button class="week-btn" onclick="prevWeek()" title="Settimana precedente">&#8592;</button>
         <div class="week-label" id="wlabel"></div>
-        <button class="week-btn" onclick="nextWeek()">&#8594;</button>
+        <button class="week-btn" onclick="nextWeek()" title="Settimana successiva">&#8594;</button>
+        <input type="date" id="date-picker" class="date-picker" title="Vai a una data" onchange="goToDate(this.value)">
+        <button class="btn btn-sm today-btn" id="today-btn" onclick="goToToday()" title="Vai alla settimana corrente">Oggi</button>
       </div>
       <span class="week-note" id="wnote" style="display:none"></span>
     </div>
@@ -415,15 +422,137 @@ td.tot-cell{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;text-
 <script>
 const DAYS=['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];
 const DAYS_FULL=['Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato','Domenica'];
-const WEEKS=[
-  {label:'13–19 Apr 2026',dates:['13/4','14/4','15/4','16/4','17/4','18/4','19/4'],note:''},
-  {label:'20–26 Apr 2026',dates:['20/4','21/4','22/4','23/4','24/4','25/4','26/4'],note:'Festivo 25 Aprile'},
-  {label:'27 Apr – 3 Mag',dates:['27/4','28/4','29/4','30/4','1/5','2/5','3/5'],note:'Festivo 1° Maggio'},
-  {label:'4–10 Mag 2026',dates:['4/5','5/5','6/5','7/5','8/5','9/5','10/5'],note:'Festa della Mamma'},
-  {label:'11–17 Mag 2026',dates:['11/5','12/5','13/5','14/5','15/5','16/5','17/5'],note:''},
-  {label:'18–24 Mag 2026',dates:['18/5','19/5','20/5','21/5','22/5','23/5','24/5'],note:''},
-  {label:'25–31 Mag 2026',dates:['25/5','26/5','27/5','28/5','29/5','30/5','31/5'],note:''},
+const MONTHS_SHORT=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+
+// ── Date utilities ────────────────────────────────────────────────
+// Week handling is ISO-8601: weeks start Monday, year and week number
+// follow ISO rules (week containing first Thursday = week 1).
+function startOfDay(d){const x=new Date(d);x.setHours(0,0,0,0);return x;}
+function mondayOf(d){
+  const x = startOfDay(d);
+  const dow = x.getDay();            // 0=Sun, 1=Mon, ..., 6=Sat
+  const diff = (dow === 0 ? -6 : 1 - dow);
+  x.setDate(x.getDate() + diff);
+  return x;
+}
+function addDays(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x;}
+function isoWeekKey(d){
+  // Returns "YYYY-Www" using ISO-8601 week numbering
+  const date = startOfDay(d);
+  date.setDate(date.getDate() + 4 - (date.getDay() || 7));   // Thursday of this week
+  const yearStart = new Date(Date.UTC(date.getFullYear(),0,1));
+  const weekNum = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+  return date.getFullYear() + '-W' + String(weekNum).padStart(2,'0');
+}
+function fmtDayShort(d){return d.getDate() + '/' + (d.getMonth()+1);}
+function fmtDateInput(d){
+  // YYYY-MM-DD for <input type="date">
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+// Easter Sunday via the Anonymous Gregorian algorithm
+function easterSunday(year){
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19*a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2*e + 2*i - h - k) % 7;
+  const m = Math.floor((a + 11*h + 22*l) / 451);
+  const month = Math.floor((h + l - 7*m + 114) / 31);
+  const day = ((h + l - 7*m + 114) % 31) + 1;
+  return new Date(year, month - 1, day);
+}
+
+// Italian national holidays + Milan patron saint + Mother's Day, for any year
+function holidaysForYear(year){
+  const easter = easterSunday(year);
+  const easterMonday = addDays(easter, 1);
+  // Mother's Day in Italy: second Sunday of May
+  const may1 = new Date(year, 4, 1);
+  const mothersDayOffset = (7 - may1.getDay()) % 7 + 7;
+  const mothersDay = addDays(may1, mothersDayOffset);
+  return [
+    { d: new Date(year, 0,  1),     name: 'Capodanno' },
+    { d: new Date(year, 0,  6),     name: 'Epifania' },
+    { d: easter,                    name: 'Pasqua' },
+    { d: easterMonday,              name: 'Lunedì dell\u2019Angelo' },
+    { d: new Date(year, 3, 25),     name: 'Festa della Liberazione' },
+    { d: new Date(year, 4,  1),     name: 'Festa del Lavoro' },
+    { d: mothersDay,                name: 'Festa della Mamma' },
+    { d: new Date(year, 5,  2),     name: 'Festa della Repubblica' },
+    { d: new Date(year, 7, 15),     name: 'Ferragosto' },
+    { d: new Date(year,10,  1),     name: 'Tutti i Santi' },
+    { d: new Date(year,11,  7),     name: 'S. Ambrogio' },   // Milan patron, applies to both stores
+    { d: new Date(year,11,  8),     name: 'Immacolata Concezione' },
+    { d: new Date(year,11, 25),     name: 'Natale' },
+    { d: new Date(year,11, 26),     name: 'S. Stefano' },
+  ];
+}
+// Cached lookup: returns array of holiday names that fall within the week starting `mondayDate`
+const holidayCache = {};
+function holidaysInWeek(mondayDate){
+  const year = mondayDate.getFullYear();
+  const sundayOfWeek = addDays(mondayDate, 6);
+  const yearEnd = sundayOfWeek.getFullYear();
+  const names = [];
+  // Check both year and yearEnd in case the week crosses Jan 1
+  const years = year === yearEnd ? [year] : [year, yearEnd];
+  for(const y of years){
+    if(!holidayCache[y]) holidayCache[y] = holidaysForYear(y);
+    for(const h of holidayCache[y]){
+      const hTime = startOfDay(h.d).getTime();
+      for(let i=0;i<7;i++){
+        if(startOfDay(addDays(mondayDate, i)).getTime() === hTime){
+          names.push(h.name);
+          break;
+        }
+      }
+    }
+  }
+  return names;
+}
+
+// Build the "week descriptor" for a given Monday date
+function buildWeek(mondayDate){
+  const days = Array.from({length:7}, (_,i) => addDays(mondayDate, i));
+  const last = days[6];
+  // Label like "13–19 Apr 2026" or "27 Apr – 3 Mag 2026" if month differs
+  let label;
+  if(mondayDate.getMonth() === last.getMonth()){
+    label = `${mondayDate.getDate()}–${last.getDate()} ${MONTHS_SHORT[mondayDate.getMonth()]} ${last.getFullYear()}`;
+  } else if(mondayDate.getFullYear() === last.getFullYear()){
+    label = `${mondayDate.getDate()} ${MONTHS_SHORT[mondayDate.getMonth()]} – ${last.getDate()} ${MONTHS_SHORT[last.getMonth()]} ${last.getFullYear()}`;
+  } else {
+    label = `${mondayDate.getDate()} ${MONTHS_SHORT[mondayDate.getMonth()]} ${mondayDate.getFullYear()} – ${last.getDate()} ${MONTHS_SHORT[last.getMonth()]} ${last.getFullYear()}`;
+  }
+  const notes = holidaysInWeek(mondayDate);
+  return {
+    key: isoWeekKey(mondayDate),
+    monday: mondayDate,
+    label,
+    dates: days.map(fmtDayShort),
+    note: notes.join(' · ')
+  };
+}
+// Current week is now a Date (Monday). The week descriptor is built on demand.
+// First 7 weeks indices [0..6] map to ISO weeks starting 2026-04-13, kept for migration.
+const LEGACY_WEEK_MONDAYS = [
+  new Date(2026, 3, 13),  // index 0
+  new Date(2026, 3, 20),
+  new Date(2026, 3, 27),
+  new Date(2026, 4,  4),
+  new Date(2026, 4, 11),
+  new Date(2026, 4, 18),
+  new Date(2026, 4, 25),
 ];
+let currentMonday = mondayOf(new Date());   // default: this week
+function curWeek(){ return buildWeek(currentMonday); }
 
 function parseHours(txt,type){
   if(!txt||['riposo','chiuso','empty'].includes(type)) return 0;
@@ -512,7 +641,7 @@ const initSched={
 let schedule = {};
 let notes    = {};        // notes[`${store}_w${w}_d${d}`] = string
 let todos    = [];
-let currentWeek=0, currentStore='GARIBALDI';
+let currentStore='GARIBALDI';
 let _es,_ep,_ew,_ed;
 let noteStore='GARIBALDI', noteDay=0, noteSaveTimer=null;
 let todoFilter='tutti';
@@ -531,24 +660,54 @@ function setConn(state, label){
 }
 
 // ── Firestore <-> in-memory conversion ────────────────────────────
-// Firestore forbids nested arrays in documents. Our `weeks` is naturally
-// array-of-arrays-of-day-slots. We wrap each week in {days: [...]} when
-// writing, and unwrap when reading. The rest of the code keeps using the
-// natural array-of-arrays shape.
+// In-memory shape: person.weeks is an OBJECT keyed by ISO week ("2026-W22")
+//   whose values are arrays of 7 day slots.
+// Firestore shape: same object, but each week-value is wrapped as {days: [...]}
+//   because Firestore forbids nested arrays.
+// We also accept and migrate the LEGACY shape where `weeks` was an array
+//   of 7 elements (the original prototype with hardcoded weeks).
+
+const EMPTY_WEEK = () => [null,null,null,null,null,null,null];
+
+function migrateLegacyWeeks(weeksValue){
+  // Legacy: array of up to 7 elements, each being an array-of-7 OR {days:[...]}.
+  // Map indices [0..6] to LEGACY_WEEK_MONDAYS to obtain ISO keys.
+  const out = {};
+  if(!Array.isArray(weeksValue)) return out;
+  weeksValue.forEach((week, i) => {
+    if(i >= LEGACY_WEEK_MONDAYS.length) return;
+    const days = Array.isArray(week) ? week : (week && week.days) || null;
+    if(!days) return;
+    // Skip completely empty weeks to keep the document small
+    if(days.every(d => d === null)) return;
+    const key = isoWeekKey(LEGACY_WEEK_MONDAYS[i]);
+    out[key] = days.slice(0,7);
+  });
+  return out;
+}
+
 function toFirestoreShape(sched){
   const out = {};
   for(const store in sched){
     out[store] = {};
     for(const person in sched[store]){
       const p = sched[store][person];
-      out[store][person] = {
-        role: p.role,
-        weeks: (p.weeks || []).map(week => ({ days: Array.isArray(week) ? week : (week && week.days) || [null,null,null,null,null,null,null] }))
-      };
+      const weeksObj = {};
+      // In-memory weeks is already a {key: [days]} object
+      const src = p.weeks || {};
+      for(const key in src){
+        const days = src[key];
+        if(!Array.isArray(days)) continue;
+        // Skip fully-empty weeks to keep documents lean
+        if(days.every(d => d === null)) continue;
+        weeksObj[key] = { days: days.slice(0,7) };
+      }
+      out[store][person] = { role: p.role, weeks: weeksObj };
     }
   }
   return out;
 }
+
 function fromFirestoreShape(data){
   if(!data) return {};
   const out = {};
@@ -556,14 +715,36 @@ function fromFirestoreShape(data){
     out[store] = {};
     for(const person in data[store]){
       const p = data[store][person];
-      out[store][person] = {
-        role: p.role,
-        // Accept both shapes for backward-compatibility / safety
-        weeks: (p.weeks || []).map(week => Array.isArray(week) ? week : (week && week.days) || [null,null,null,null,null,null,null])
-      };
+      let weeksObj = {};
+      const src = p.weeks;
+      if(Array.isArray(src)){
+        // Legacy shape stored on Firestore (early seeding). Migrate.
+        weeksObj = migrateLegacyWeeks(src);
+      } else if(src && typeof src === 'object'){
+        // Modern shape: {key: {days:[...]}} OR {key: [...]} just in case
+        for(const key in src){
+          const w = src[key];
+          const days = Array.isArray(w) ? w : (w && w.days) || null;
+          if(Array.isArray(days)) weeksObj[key] = days.slice(0,7);
+        }
+      }
+      out[store][person] = { role: p.role || 'support', weeks: weeksObj };
     }
   }
   return out;
+}
+
+// Helpers for the in-memory shape
+function getPersonWeek(store, person, weekKey){
+  const days = schedule?.[store]?.[person]?.weeks?.[weekKey];
+  return Array.isArray(days) ? days : EMPTY_WEEK();
+}
+function setPersonDay(store, person, weekKey, dayIdx, value){
+  if(!schedule[store]) schedule[store] = {};
+  if(!schedule[store][person]) return;
+  if(!schedule[store][person].weeks) schedule[store][person].weeks = {};
+  if(!schedule[store][person].weeks[weekKey]) schedule[store][person].weeks[weekKey] = EMPTY_WEEK();
+  schedule[store][person].weeks[weekKey][dayIdx] = value;
 }
 
 // ── Firestore: load + listen + save ───────────────────────────────
@@ -582,7 +763,9 @@ async function initFirebase(){
     const snap = await fb.getDoc(schedRef);
     if(!snap.exists()){
       console.log('[turni] First run — seeding initial schedule to Firestore');
-      await fb.setDoc(schedRef, { data: toFirestoreShape(initSched) });
+      // initSched is still written in legacy shape (array of 7); migrate first.
+      const seedNew = fromFirestoreShape(initSched);
+      await fb.setDoc(schedRef, { data: toFirestoreShape(seedNew) });
     }
   } catch(e){
     console.error('[turni] seeding failed', e);
@@ -606,7 +789,29 @@ async function initFirebase(){
   });
 
   fb.onSnapshot(notesRef, (snap) => {
-    notes = snap.exists() ? (snap.data().data || {}) : {};
+    const raw = snap.exists() ? (snap.data().data || {}) : {};
+    // Migrate legacy keys like "note_GARIBALDI_w0_d3" → "note_GARIBALDI_2026-W16_d3"
+    notes = {};
+    let migratedAny = false;
+    for(const k in raw){
+      const legacyMatch = k.match(/^note_(GARIBALDI|MARGHERA)_w(\d)_d(\d)$/);
+      if(legacyMatch){
+        const [, store, wIdx, dIdx] = legacyMatch;
+        const i = parseInt(wIdx);
+        if(i >= 0 && i < LEGACY_WEEK_MONDAYS.length){
+          const newKey = `note_${store}_${isoWeekKey(LEGACY_WEEK_MONDAYS[i])}_d${dIdx}`;
+          notes[newKey] = raw[k];
+          migratedAny = true;
+          continue;
+        }
+      }
+      notes[k] = raw[k];
+    }
+    if(migratedAny){
+      console.log('[turni] Migrated legacy note keys to ISO week format');
+      // Persist the migrated shape so future loads are fast
+      saveNotes();
+    }
     loadNote();
   }, (err) => console.error('[turni] notes listener error', err));
 
@@ -654,22 +859,49 @@ function setStore(s,btn){
   if(btn) btn.classList.add('active');
   render();
 }
-function prevWeek(){if(currentWeek>0){currentWeek--;render();renderNoteDayTabs();loadNote();}}
-function nextWeek(){if(currentWeek<6){currentWeek++;render();renderNoteDayTabs();loadNote();}}
+function prevWeek(){ currentMonday = addDays(currentMonday, -7); afterWeekChange(); }
+function nextWeek(){ currentMonday = addDays(currentMonday, 7);  afterWeekChange(); }
+function goToToday(){ currentMonday = mondayOf(new Date()); afterWeekChange(); }
+function goToDate(dateStr){
+  // dateStr is YYYY-MM-DD from <input type="date">
+  if(!dateStr) return;
+  const parts = dateStr.split('-').map(Number);
+  if(parts.length !== 3) return;
+  const d = new Date(parts[0], parts[1]-1, parts[2]);
+  if(isNaN(d.getTime())) return;
+  currentMonday = mondayOf(d);
+  afterWeekChange();
+}
+function afterWeekChange(){
+  render();
+  renderNoteDayTabs();
+  loadNote();
+}
 function getStores(){return currentStore==='ENTRAMBI'?['GARIBALDI','MARGHERA']:[currentStore];}
 
 function render(){
-  const w=WEEKS[currentWeek];
-  document.getElementById('wlabel').textContent=w.label;
+  const w = curWeek();
+  const wKey = w.key;
+  document.getElementById('wlabel').textContent = w.label;
+  // Sync date picker with current week's Monday
+  const dp = document.getElementById('date-picker');
+  if(dp) dp.value = fmtDateInput(w.monday);
   const noteEl=document.getElementById('wnote');
   if(w.note){noteEl.textContent=w.note;noteEl.style.display='';} else noteEl.style.display='none';
+
+  // Highlight "today" button if currentMonday is the actual current week
+  const todayBtn = document.getElementById('today-btn');
+  if(todayBtn){
+    const isCurrent = isoWeekKey(currentMonday) === isoWeekKey(new Date());
+    todayBtn.classList.toggle('is-current', isCurrent);
+  }
 
   const stores=getStores();
   let totalOre=0,totalPersone=0,slotVuoti=0,giorniLav=0;
   stores.forEach(st=>{
     Object.keys(schedule[st]||{}).forEach(p=>{
       totalPersone++;
-      const row=schedule[st][p].weeks[currentWeek] || [];
+      const row = getPersonWeek(st, p, wKey);
       row.forEach(s=>{
         const {type,hours}=parseSlot(s||'');
         totalOre+=parseHours(hours,type);
@@ -695,7 +927,7 @@ function render(){
     const cls=st==='GARIBALDI'?'gari':'margh';
     html+=`<tr class="store-section ${cls}"><td colspan="9">${st==='GARIBALDI'?'Garibaldi':'Marghera'} — settimana ${w.label}</td></tr>`;
     Object.entries(schedule[st]||{}).forEach(([person,pdata])=>{
-      const row=pdata.weeks[currentWeek] || [null,null,null,null,null,null,null];
+      const row = getPersonWeek(st, person, wKey);
       let weekH=0;
       const cells=DAYS.map((_,di)=>{
         const raw=row[di]||null;
@@ -705,7 +937,7 @@ function render(){
         let cls2='pill-'+type;
         if(type==='empty'||!raw) cls2='pill-empty';
         let lbl=type==='riposo'?'Riposo':type==='chiuso'?'Chiuso':type==='empty'||!raw?'+':hours||type;
-        return `<td><div class="shift-cell"><span class="shift-pill ${cls2}" data-store="${st}" data-person="${encodeURIComponent(person)}" data-week="${currentWeek}" data-day="${di}" data-raw="${encodeURIComponent(raw||'')}">${lbl}</span>${h>0?`<span class="shift-h">${h}h</span>`:''}</div></td>`;
+        return `<td><div class="shift-cell"><span class="shift-pill ${cls2}" data-store="${st}" data-person="${encodeURIComponent(person)}" data-week-key="${wKey}" data-day="${di}" data-raw="${encodeURIComponent(raw||'')}">${lbl}</span>${h>0?`<span class="shift-h">${h}h</span>`:''}</div></td>`;
       }).join('');
       html+=`<tr><td><div class="person-name">${person}</div><div class="person-role">${pdata.role==='resp'?'Responsabile':'Supporto'}</div></td>${cells}<td class="tot-cell">${Math.round(weekH)}<span style="font-size:10px;font-weight:400;color:var(--text3)"> h</span></td></tr>`;
     });
@@ -714,10 +946,12 @@ function render(){
 }
 
 // Modal shift
-function openModal(store,person,week,day,raw){
-  _es=store;_ep=person;_ew=week;_ed=day;
+function openModal(store, person, weekKey, day, raw){
+  _es=store; _ep=person; _ew=weekKey; _ed=day;
   const {type,hours}=parseSlot(raw||'');
-  document.getElementById('modal-title').textContent=`${person} — ${DAYS_FULL[day]} ${WEEKS[week].dates[day]}`;
+  // Reconstruct the week's Monday from the ISO key to display a friendly date
+  const w = curWeek().key === weekKey ? curWeek() : buildWeek(currentMonday);
+  document.getElementById('modal-title').textContent=`${person} — ${DAYS_FULL[day]} ${w.dates[day]}`;
   document.getElementById('m-type').value=type||'empty';
   document.getElementById('m-hours').value=hours;
   onTypeChange();
@@ -741,19 +975,15 @@ function updateCalc(){
 function saveShift(){
   const t=document.getElementById('m-type').value;
   const h=document.getElementById('m-hours').value;
-  if(!schedule[_es]) schedule[_es]={};
-  if(!schedule[_es][_ep]) return;
-  if(!schedule[_es][_ep].weeks[_ew]) schedule[_es][_ep].weeks[_ew]=[null,null,null,null,null,null,null];
-  schedule[_es][_ep].weeks[_ew][_ed]=t===''||t==='empty'?null:makeSlot(t,h);
+  const value = (t===''||t==='empty') ? null : makeSlot(t,h);
+  setPersonDay(_es, _ep, _ew, _ed, value);
   scheduleSave();
-  closeModal('modal-shift');render();
+  closeModal('modal-shift'); render();
 }
 function deleteShift(){
-  if(schedule[_es]?.[_ep]?.weeks?.[_ew]){
-    schedule[_es][_ep].weeks[_ew][_ed]=null;
-    scheduleSave();
-  }
-  closeModal('modal-shift');render();
+  setPersonDay(_es, _ep, _ew, _ed, null);
+  scheduleSave();
+  closeModal('modal-shift'); render();
 }
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 
@@ -764,7 +994,7 @@ function addPerson(){
   const role=document.getElementById('p-role').value;
   if(!name) return;
   if(!schedule[store]) schedule[store]={};
-  schedule[store][name]={role,weeks:Array(7).fill(null).map(()=>Array(7).fill(null))};
+  schedule[store][name]={role,weeks:{}};
   scheduleSave();
   closeModal('modal-person');
   document.getElementById('p-name').value='';
@@ -776,14 +1006,43 @@ function addPerson(){
 }
 
 // ── Export Excel ──────────────────────────────────────────────────
+function collectPopulatedWeekKeys(){
+  // Gather all ISO week keys that have at least one day filled across both stores
+  const keys = new Set();
+  ['GARIBALDI','MARGHERA'].forEach(st=>{
+    Object.values(schedule[st]||{}).forEach(p=>{
+      for(const k in (p.weeks || {})){
+        const days = p.weeks[k];
+        if(Array.isArray(days) && days.some(d => d !== null)) keys.add(k);
+      }
+    });
+  });
+  if(keys.size === 0) keys.add(curWeek().key);  // fallback: current week
+  // Sort by Monday-date ascending
+  return [...keys].sort();   // ISO keys sort naturally in chronological order
+}
+function mondayFromIsoKey(key){
+  // "2026-W22" → Monday of ISO week 22, 2026
+  const m = key.match(/^(\d{4})-W(\d{2})$/);
+  if(!m) return null;
+  const year = +m[1], week = +m[2];
+  // Jan 4th is always in ISO week 1
+  const jan4 = new Date(year, 0, 4);
+  const jan4Day = jan4.getDay() || 7;
+  const week1Monday = addDays(jan4, 1 - jan4Day);
+  return addDays(week1Monday, (week - 1) * 7);
+}
 function exportExcel(){
   const wb=XLSX.utils.book_new();
-  WEEKS.forEach((winfo,wi)=>{
+  const weekKeys = collectPopulatedWeekKeys();
+  weekKeys.forEach(wKey=>{
+    const monday = mondayFromIsoKey(wKey);
+    const winfo = buildWeek(monday);
     const rows=[];
     rows.push(['Negozio','Persona','Ruolo',...DAYS_FULL,'Ore totali']);
     ['GARIBALDI','MARGHERA'].forEach(st=>{
       Object.entries(schedule[st]||{}).forEach(([person,pdata])=>{
-        const week=pdata.weeks[wi] || [];
+        const week = (pdata.weeks && pdata.weeks[wKey]) || EMPTY_WEEK();
         let tot=0;
         const dayVals=week.map(raw=>{
           const {type,hours}=parseSlot(raw||'');
@@ -801,12 +1060,13 @@ function exportExcel(){
     ws['!cols']=[{wch:12},{wch:14},{wch:14},...Array(7).fill({wch:16}),{wch:10}];
     XLSX.utils.book_append_sheet(wb,ws,winfo.label.replace(/[\/–]/g,'-').substring(0,31));
   });
-  const sumRows=[['Persona','Negozio',...WEEKS.map(w=>w.label),'Totale']];
+  // Summary: hours per week per responsabile
+  const sumRows=[['Persona','Negozio',...weekKeys.map(k => buildWeek(mondayFromIsoKey(k)).label),'Totale']];
   ['GARIBALDI','MARGHERA'].forEach(st=>{
     Object.entries(schedule[st]||{}).filter(([,p])=>p.role==='resp').forEach(([name,pdata])=>{
-      const weekTots=pdata.weeks.map(week=>{
-        let t=0;
-        (week||[]).forEach(raw=>{const {type,hours}=parseSlot(raw||'');t+=parseHours(hours,type);});
+      const weekTots = weekKeys.map(k=>{
+        const days = (pdata.weeks && pdata.weeks[k]) || EMPTY_WEEK();
+        let t=0; days.forEach(raw=>{const {type,hours}=parseSlot(raw||'');t+=parseHours(hours,type);});
         return t;
       });
       sumRows.push([name,st==='GARIBALDI'?'Garibaldi':'Marghera',...weekTots,weekTots.reduce((a,b)=>a+b,0)]);
@@ -821,7 +1081,7 @@ function exportPDF(){
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
   const stores=getStores();
-  const w=WEEKS[currentWeek];
+  const w = curWeek();
   doc.setFont('helvetica','bold');doc.setFontSize(14);
   doc.text(`Turni — ${w.label}`,14,16);
   if(w.note){doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(150);doc.text(w.note,14,22);doc.setTextColor(0);}
@@ -829,7 +1089,7 @@ function exportPDF(){
   const body=[];
   stores.forEach(st=>{
     Object.entries(schedule[st]||{}).forEach(([person,pdata])=>{
-      const row=pdata.weeks[currentWeek] || [];
+      const row = getPersonWeek(st, person, w.key);
       let tot=0;
       const dayVals=row.map(raw=>{
         const {type,hours}=parseSlot(raw||'');
@@ -865,7 +1125,7 @@ function exportPDF(){
 }
 
 // ── Notes ─────────────────────────────────────────────────────────
-function noteKey(store,w,d){return `${store}_w${w}_d${d}`;}
+function noteKey(store, wKey, dIdx){ return `note_${store}_${wKey}_d${dIdx}`; }
 function setNoteStore(s,btn){
   noteStore=s;
   document.querySelectorAll('.note-stab').forEach(t=>t.classList.remove('active'));
@@ -873,7 +1133,7 @@ function setNoteStore(s,btn){
   loadNote();
 }
 function renderNoteDayTabs(){
-  const w=WEEKS[currentWeek];
+  const w = curWeek();
   document.getElementById('note-day-tabs').innerHTML=DAYS.map((d,i)=>`<button class="day-tab${i===noteDay?' active':''}" onclick="selectNoteDay(${i},this)">${d}<br><span style="font-size:9px;font-weight:400">${w.dates[i]}</span></button>`).join('');
 }
 function selectNoteDay(idx,btn){
@@ -883,12 +1143,12 @@ function selectNoteDay(idx,btn){
   loadNote();
 }
 function loadNote(){
-  document.getElementById('note-text').value = notes[noteKey(noteStore,currentWeek,noteDay)] || '';
+  document.getElementById('note-text').value = notes[noteKey(noteStore, curWeek().key, noteDay)] || '';
 }
 function saveNote(){
   clearTimeout(noteSaveTimer);
   noteSaveTimer=setTimeout(async () => {
-    notes[noteKey(noteStore,currentWeek,noteDay)] = document.getElementById('note-text').value;
+    notes[noteKey(noteStore, curWeek().key, noteDay)] = document.getElementById('note-text').value;
     await saveNotes();
     const s=document.getElementById('note-saved');
     s.classList.add('show');
@@ -949,12 +1209,12 @@ document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{
 document.getElementById('tbody').addEventListener('click',function(e){
   const pill=e.target.closest('.shift-pill');
   if(!pill) return;
-  openModal(pill.dataset.store, decodeURIComponent(pill.dataset.person), parseInt(pill.dataset.week), parseInt(pill.dataset.day), decodeURIComponent(pill.dataset.raw));
+  openModal(pill.dataset.store, decodeURIComponent(pill.dataset.person), pill.dataset.weekKey, parseInt(pill.dataset.day), decodeURIComponent(pill.dataset.raw));
 });
 
 // Expose functions called from inline onclick handlers
 Object.assign(window, {
-  setStore, prevWeek, nextWeek, openModal, onTypeChange, saveShift, deleteShift,
+  setStore, prevWeek, nextWeek, goToToday, goToDate, openModal, onTypeChange, saveShift, deleteShift,
   closeModal, openAddPerson, addPerson, exportExcel, exportPDF,
   setNoteStore, selectNoteDay, saveNote,
   setTodoFilter, addTodo, toggleTodo, deleteTodo
