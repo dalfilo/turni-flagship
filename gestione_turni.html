@@ -98,6 +98,11 @@ td.tot-cell{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;text-
 .store-section.margh td{color:var(--blue);background:var(--blue-bg)}
 .person-name{font-weight:500;font-size:13px;color:var(--text)}
 .person-role{font-size:10px;color:var(--text3);font-weight:400}
+.person-cell{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.person-info{flex:1;min-width:0}
+.person-del{width:22px;height:22px;border-radius:6px;border:1px solid transparent;background:transparent;color:var(--text3);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1;opacity:0;transition:opacity .15s,background .15s,color .15s}
+tbody tr:hover .person-del{opacity:1}
+.person-del:hover{background:var(--red-bg);color:var(--red);border-color:#DFC3C3}
 
 .shift-cell{display:flex;flex-direction:column;align-items:center;gap:2px}
 .shift-pill{display:inline-flex;align-items:center;justify-content:center;padding:3px 7px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;transition:all .12s;white-space:nowrap;min-width:72px;font-family:'DM Mono',monospace}
@@ -939,7 +944,7 @@ function render(){
         let lbl=type==='riposo'?'Riposo':type==='chiuso'?'Chiuso':type==='empty'||!raw?'+':hours||type;
         return `<td><div class="shift-cell"><span class="shift-pill ${cls2}" data-store="${st}" data-person="${encodeURIComponent(person)}" data-week-key="${wKey}" data-day="${di}" data-raw="${encodeURIComponent(raw||'')}">${lbl}</span>${h>0?`<span class="shift-h">${h}h</span>`:''}</div></td>`;
       }).join('');
-      html+=`<tr><td><div class="person-name">${person}</div><div class="person-role">${pdata.role==='resp'?'Responsabile':'Supporto'}</div></td>${cells}<td class="tot-cell">${Math.round(weekH)}<span style="font-size:10px;font-weight:400;color:var(--text3)"> h</span></td></tr>`;
+      html+=`<tr><td><div class="person-cell"><div class="person-info"><div class="person-name">${person}</div><div class="person-role">${pdata.role==='resp'?'Responsabile':'Supporto'}</div></div><button class="person-del" data-store="${st}" data-person="${encodeURIComponent(person)}" title="Rimuovi persona">&#215;</button></div></td>${cells}<td class="tot-cell">${Math.round(weekH)}<span style="font-size:10px;font-weight:400;color:var(--text3)"> h</span></td></tr>`;
     });
   });
   tbody.innerHTML=html;
@@ -988,6 +993,22 @@ function deleteShift(){
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 
 function openAddPerson(){document.getElementById('modal-person').classList.add('open');}
+function removePerson(store, person){
+  const p = schedule?.[store]?.[person];
+  if(!p) return;
+  // Count non-empty weeks so the user knows what they're discarding
+  let filledDays = 0;
+  for(const k in (p.weeks || {})){
+    const days = p.weeks[k];
+    if(Array.isArray(days)) filledDays += days.filter(d => d !== null).length;
+  }
+  const storeLabel = store === 'GARIBALDI' ? 'Garibaldi' : 'Marghera';
+  const detail = filledDays > 0 ? ` Verranno eliminati ${filledDays} turni registrati.` : '';
+  if(!confirm(`Rimuovere ${person} da ${storeLabel}?${detail}`)) return;
+  delete schedule[store][person];
+  scheduleSave();
+  render();
+}
 function addPerson(){
   const name=document.getElementById('p-name').value.trim();
   const store=document.getElementById('p-store').value;
@@ -1207,6 +1228,14 @@ function renderTodos(){
 document.getElementById('m-hours').addEventListener('input',updateCalc);
 document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
 document.getElementById('tbody').addEventListener('click',function(e){
+  const del=e.target.closest('.person-del');
+  if(del){
+    e.stopPropagation();
+    const store=del.dataset.store;
+    const person=decodeURIComponent(del.dataset.person);
+    removePerson(store, person);
+    return;
+  }
   const pill=e.target.closest('.shift-pill');
   if(!pill) return;
   openModal(pill.dataset.store, decodeURIComponent(pill.dataset.person), pill.dataset.weekKey, parseInt(pill.dataset.day), decodeURIComponent(pill.dataset.raw));
@@ -1215,7 +1244,7 @@ document.getElementById('tbody').addEventListener('click',function(e){
 // Expose functions called from inline onclick handlers
 Object.assign(window, {
   setStore, prevWeek, nextWeek, goToToday, goToDate, openModal, onTypeChange, saveShift, deleteShift,
-  closeModal, openAddPerson, addPerson, exportExcel, exportPDF,
+  closeModal, openAddPerson, addPerson, removePerson, exportExcel, exportPDF,
   setNoteStore, selectNoteDay, saveNote,
   setTodoFilter, addTodo, toggleTodo, deleteTodo
 });
