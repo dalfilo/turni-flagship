@@ -15,6 +15,7 @@
   --green:#1A6B3C;--green-bg:#E8F5EE;--green-mid:#2E9155;
   --blue:#1A4A8A;--blue-bg:#E8EFF8;--blue-mid:#2563C4;
   --red:#8A1A1A;--red-bg:#F8E8E8;
+  --burgundy:#5C2718;--burgundy-bg:#EFE2DC;
   --amber:#7A5000;--amber-bg:#FFF3D6;
   --gray2:#ECEAE4;--gray3:#D4D1C8;
   --radius:8px;--radius-lg:12px;
@@ -109,6 +110,7 @@ tbody tr:hover .person-del{opacity:1}
 .shift-pill:hover{opacity:.8;transform:scale(1.04)}
 .pill-work{background:var(--green-bg);color:var(--green);border:1px solid #C3DDD0}
 .pill-riposo{background:var(--red-bg);color:var(--red);border:1px solid #DFC3C3}
+.pill-malattia{background:var(--burgundy-bg);color:var(--burgundy);border:1px solid #D4BFB6}
 .pill-chiuso{background:var(--gray2);color:var(--text3);border:1px solid var(--gray3)}
 .pill-support{background:var(--blue-bg);color:var(--blue);border:1px solid #C3D5EE;font-style:italic}
 .pill-empty{background:transparent;color:var(--text3);border:1px dashed var(--gray3)}
@@ -269,6 +271,7 @@ tbody tr:hover .person-del{opacity:1}
   <div class="legend">
     <div class="leg"><div class="leg-dot" style="background:var(--green-bg);border:1px solid #C3DDD0"></div>Turno lavoro</div>
     <div class="leg"><div class="leg-dot" style="background:var(--red-bg);border:1px solid #DFC3C3"></div>Riposo</div>
+    <div class="leg"><div class="leg-dot" style="background:var(--burgundy-bg);border:1px solid #D4BFB6"></div>Malattia</div>
     <div class="leg"><div class="leg-dot" style="background:var(--gray2);border:1px solid var(--gray3)"></div>Chiuso</div>
     <div class="leg"><div class="leg-dot" style="background:var(--blue-bg);border:1px solid #C3D5EE"></div>Supporto</div>
     <div class="leg"><div class="leg-dot" style="background:transparent;border:1px dashed var(--gray3)"></div>Da assegnare</div>
@@ -341,6 +344,7 @@ tbody tr:hover .person-del{opacity:1}
         <select id="m-type" onchange="onTypeChange()">
           <option value="work">Turno lavoro</option>
           <option value="riposo">Riposo</option>
+          <option value="malattia">Malattia</option>
           <option value="chiuso">Chiuso (negozio chiuso)</option>
           <option value="support">Supporto</option>
           <option value="empty">Vuoto / da assegnare</option>
@@ -560,7 +564,7 @@ let currentMonday = mondayOf(new Date());   // default: this week
 function curWeek(){ return buildWeek(currentMonday); }
 
 function parseHours(txt,type){
-  if(!txt||['riposo','chiuso','empty'].includes(type)) return 0;
+  if(!txt||['riposo','chiuso','malattia','empty'].includes(type)) return 0;
   let t=0;
   txt.split('/').forEach(s=>{const p=s.trim().split('-');if(p.length===2){const a=parseFloat(p[0]),b=parseFloat(p[1]);if(!isNaN(a)&&!isNaN(b))t+=b-a;}});
   return t;
@@ -902,7 +906,7 @@ function render(){
   }
 
   const stores=getStores();
-  let totalOre=0,totalPersone=0,slotVuoti=0,giorniLav=0;
+  let totalOre=0,totalPersone=0,slotVuoti=0,giorniLav=0,giorniMalattia=0;
   stores.forEach(st=>{
     Object.keys(schedule[st]||{}).forEach(p=>{
       totalPersone++;
@@ -911,16 +915,20 @@ function render(){
         const {type,hours}=parseSlot(s||'');
         totalOre+=parseHours(hours,type);
         if(type==='work'||type==='support') giorniLav++;
+        if(type==='malattia') giorniMalattia++;
         if(!s||type==='empty') slotVuoti++;
       });
     });
   });
 
   const oreColor=totalOre>=60?'good':totalOre>=30?'warn':'bad';
+  const malattiaNote = giorniMalattia > 0
+    ? `<span style="color:var(--burgundy);font-weight:500">${giorniMalattia} ${giorniMalattia===1?'giorno':'giorni'} di malattia</span>`
+    : 'tutti presenti';
   document.getElementById('stats').innerHTML=`
     <div class="stat"><div class="stat-label">Ore totali settimana</div><div class="stat-val ${oreColor}">${Math.round(totalOre)}<span style="font-size:16px;font-weight:400"> h</span></div><div class="stat-sub">${stores.length>1?'tutti i negozi':currentStore.toLowerCase()}</div></div>
     <div class="stat"><div class="stat-label">Persone pianificate</div><div class="stat-val">${totalPersone}</div><div class="stat-sub">di cui ${stores.flatMap(st=>Object.values(schedule[st]||{})).filter(p=>p.role==='support').length} supporto</div></div>
-    <div class="stat"><div class="stat-label">Turni attivi</div><div class="stat-val good">${giorniLav}</div><div class="stat-sub">su ${totalPersone*7} slot totali</div></div>
+    <div class="stat"><div class="stat-label">Turni attivi</div><div class="stat-val good">${giorniLav}</div><div class="stat-sub">${malattiaNote}</div></div>
     <div class="stat"><div class="stat-label">Slot da assegnare</div><div class="stat-val ${slotVuoti>0?'warn':'good'}">${slotVuoti}</div><div class="stat-sub">${slotVuoti===0?'tutto pianificato':'da completare'}</div></div>
   `;
 
@@ -941,7 +949,7 @@ function render(){
         weekH+=h;
         let cls2='pill-'+type;
         if(type==='empty'||!raw) cls2='pill-empty';
-        let lbl=type==='riposo'?'Riposo':type==='chiuso'?'Chiuso':type==='empty'||!raw?'+':hours||type;
+        let lbl=type==='riposo'?'Riposo':type==='malattia'?'Malattia':type==='chiuso'?'Chiuso':type==='empty'||!raw?'+':hours||type;
         return `<td><div class="shift-cell"><span class="shift-pill ${cls2}" data-store="${st}" data-person="${encodeURIComponent(person)}" data-week-key="${wKey}" data-day="${di}" data-raw="${encodeURIComponent(raw||'')}">${lbl}</span>${h>0?`<span class="shift-h">${h}h</span>`:''}</div></td>`;
       }).join('');
       html+=`<tr><td><div class="person-cell"><div class="person-info"><div class="person-name">${person}</div><div class="person-role">${pdata.role==='resp'?'Responsabile':'Supporto'}</div></div><button class="person-del" data-store="${st}" data-person="${encodeURIComponent(person)}" title="Rimuovi persona">&#215;</button></div></td>${cells}<td class="tot-cell">${Math.round(weekH)}<span style="font-size:10px;font-weight:400;color:var(--text3)"> h</span></td></tr>`;
@@ -1071,6 +1079,7 @@ function exportExcel(){
           tot+=h;
           if(!raw||type==='empty') return '';
           if(type==='riposo') return 'Riposo';
+          if(type==='malattia') return 'Malattia *';
           if(type==='chiuso') return 'Chiuso';
           return hours||type;
         });
@@ -1081,18 +1090,27 @@ function exportExcel(){
     ws['!cols']=[{wch:12},{wch:14},{wch:14},...Array(7).fill({wch:16}),{wch:10}];
     XLSX.utils.book_append_sheet(wb,ws,winfo.label.replace(/[\/–]/g,'-').substring(0,31));
   });
-  // Summary: hours per week per responsabile
-  const sumRows=[['Persona','Negozio',...weekKeys.map(k => buildWeek(mondayFromIsoKey(k)).label),'Totale']];
+  // Summary: hours per week per responsabile, plus a malattie count column
+  const sumRows=[['Persona','Negozio',...weekKeys.map(k => buildWeek(mondayFromIsoKey(k)).label),'Totale','Giorni malattia *']];
   ['GARIBALDI','MARGHERA'].forEach(st=>{
     Object.entries(schedule[st]||{}).filter(([,p])=>p.role==='resp').forEach(([name,pdata])=>{
+      let totMalattia = 0;
       const weekTots = weekKeys.map(k=>{
         const days = (pdata.weeks && pdata.weeks[k]) || EMPTY_WEEK();
-        let t=0; days.forEach(raw=>{const {type,hours}=parseSlot(raw||'');t+=parseHours(hours,type);});
+        let t=0;
+        days.forEach(raw=>{
+          const {type,hours}=parseSlot(raw||'');
+          t+=parseHours(hours,type);
+          if(type==='malattia') totMalattia++;
+        });
         return t;
       });
-      sumRows.push([name,st==='GARIBALDI'?'Garibaldi':'Marghera',...weekTots,weekTots.reduce((a,b)=>a+b,0)]);
+      sumRows.push([name,st==='GARIBALDI'?'Garibaldi':'Marghera',...weekTots,weekTots.reduce((a,b)=>a+b,0),totMalattia]);
     });
   });
+  // Footnote row
+  sumRows.push([]);
+  sumRows.push(['* I giorni di malattia non sono conteggiati nelle ore totali']);
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sumRows),'Riepilogo ore');
   XLSX.writeFile(wb,'turni_garibaldi_marghera.xlsx');
 }
@@ -1117,6 +1135,7 @@ function exportPDF(){
         const h=parseHours(hours,type);tot+=h;
         if(!raw||type==='empty') return '–';
         if(type==='riposo') return 'Rip.';
+        if(type==='malattia') return 'Mal.*';
         if(type==='chiuso') return 'Chius.';
         return hours||type;
       });
@@ -1132,7 +1151,8 @@ function exportPDF(){
     didParseCell:(d)=>{
       const val=d.cell.raw;
       if(typeof val==='string'){
-        if(val.includes('Rip.')) d.cell.styles.textColor=[160,30,30];
+        if(val.includes('Mal.*')) d.cell.styles.textColor=[92,39,24];   // burgundy
+        else if(val.includes('Rip.')) d.cell.styles.textColor=[160,30,30];
         else if(val.includes('Chius.')) d.cell.styles.textColor=[120,120,120];
         else if(val!=='–'&&val!=='Garibaldi'&&val!=='Marghera'&&d.row.section==='body'&&d.column.index>2&&d.column.index<10){
           d.cell.styles.textColor=[26,107,60];
@@ -1140,6 +1160,14 @@ function exportPDF(){
       }
     }
   });
+  // Footnote about malattia if any are present in the visible week
+  const hasMalattia = body.some(row => row.some(cell => typeof cell === 'string' && cell.includes('Mal.*')));
+  if(hasMalattia){
+    const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 6 : 30;
+    doc.setFontSize(8); doc.setFont('helvetica','italic'); doc.setTextColor(92,39,24);
+    doc.text('* I giorni di malattia non sono conteggiati nelle ore totali.', 14, finalY);
+    doc.setTextColor(0); doc.setFont('helvetica','normal');
+  }
   doc.setFontSize(7);doc.setTextColor(160);
   doc.text(`Esportato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})}`,14,doc.internal.pageSize.height-6);
   doc.save(`turni_${w.label.replace(/[^a-zA-Z0-9]/g,'_')}.pdf`);
