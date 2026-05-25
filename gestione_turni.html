@@ -530,6 +530,42 @@ function setConn(state, label){
   document.getElementById('conn-label').textContent = label || state;
 }
 
+// ── Firestore <-> in-memory conversion ────────────────────────────
+// Firestore forbids nested arrays in documents. Our `weeks` is naturally
+// array-of-arrays-of-day-slots. We wrap each week in {days: [...]} when
+// writing, and unwrap when reading. The rest of the code keeps using the
+// natural array-of-arrays shape.
+function toFirestoreShape(sched){
+  const out = {};
+  for(const store in sched){
+    out[store] = {};
+    for(const person in sched[store]){
+      const p = sched[store][person];
+      out[store][person] = {
+        role: p.role,
+        weeks: (p.weeks || []).map(week => ({ days: Array.isArray(week) ? week : (week && week.days) || [null,null,null,null,null,null,null] }))
+      };
+    }
+  }
+  return out;
+}
+function fromFirestoreShape(data){
+  if(!data) return {};
+  const out = {};
+  for(const store in data){
+    out[store] = {};
+    for(const person in data[store]){
+      const p = data[store][person];
+      out[store][person] = {
+        role: p.role,
+        // Accept both shapes for backward-compatibility / safety
+        weeks: (p.weeks || []).map(week => Array.isArray(week) ? week : (week && week.days) || [null,null,null,null,null,null,null])
+      };
+    }
+  }
+  return out;
+}
+
 // ── Firestore: load + listen + save ───────────────────────────────
 async function initFirebase(){
   fb = window.__fb;
@@ -541,12 +577,12 @@ async function initFirebase(){
   const notesRef = fb.doc(fb.db, 'app', 'notes');
   const todosRef = fb.doc(fb.db, 'app', 'todos');
 
-  // First-run seeding: if no schedule doc, write initSched
+  // First-run seeding: if no schedule doc, write initSched (converted shape)
   try {
     const snap = await fb.getDoc(schedRef);
     if(!snap.exists()){
       console.log('[turni] First run — seeding initial schedule to Firestore');
-      await fb.setDoc(schedRef, { data: initSched });
+      await fb.setDoc(schedRef, { data: toFirestoreShape(initSched) });
     }
   } catch(e){
     console.error('[turni] seeding failed', e);
@@ -559,7 +595,7 @@ async function initFirebase(){
   fb.onSnapshot(schedRef, (snap) => {
     if(suppressNextSnapshot){ suppressNextSnapshot = false; }
     if(snap.exists()){
-      schedule = snap.data().data || {};
+      schedule = fromFirestoreShape(snap.data().data || {});
       render();
       document.getElementById('loading').classList.add('hidden');
       setConn('online','online');
@@ -590,7 +626,7 @@ function scheduleSave(){
   saveTimer = setTimeout(async () => {
     try {
       suppressNextSnapshot = true;
-      await fb.setDoc(fb.doc(fb.db, 'app', 'schedule'), { data: schedule });
+      await fb.setDoc(fb.doc(fb.db, 'app', 'schedule'), { data: toFirestoreShape(schedule) });
       setConn('online','online');
     } catch(e){
       console.error('[turni] save failed', e);
